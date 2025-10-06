@@ -1,1 +1,4 @@
 meshtastic
+psycopg2-binary
+sqlalchemy
+pandas
