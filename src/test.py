@@ -2,7 +2,6 @@
 import meshtastic
 import meshtastic.serial_interface
 from pubsub import pub
-import json
 import time
 
 LOG_FILE = "meshtastic_messages.log"
@@ -10,7 +9,7 @@ LOG_FILE = "meshtastic_messages.log"
 def log_message(packet, interface):
     """
     Callback for every received Meshtastic message.
-    Writes messages to a log file with timestamp and node info.
+    Logs all message text (no filtering or JSON parsing).
     """
     try:
         node_id = packet.get("fromId", "unknown")
@@ -18,27 +17,21 @@ def log_message(packet, interface):
         msg = decoded.get("text", "")
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-        entry = {
-            "timestamp": timestamp,
-            "node_id": node_id,
-            "raw_message": msg,
-            "full_packet": decoded
-        }
+        log_line = f"[{timestamp}] From {node_id}: {msg}\n"
 
-        # Append to log file
         with open(LOG_FILE, "a") as f:
-            f.write(json.dumps(entry) + "\n")
+            f.write(log_line)
 
-        print(f"[{timestamp}] Logged message from {node_id}: {msg}")
+        print(log_line, end="")
 
     except Exception as e:
         print(f"Error logging message: {e}")
 
 def main():
     print("🔌 Connecting to Meshtastic device...")
-    interface = meshtastic.serial_interface.SerialInterface()  # auto-detects USB serial port
+    interface = meshtastic.serial_interface.SerialInterface()  # Auto-detects serial port
     pub.subscribe(log_message, "meshtastic.receive")
-    print(f"📡 Listening for messages... (logging to {LOG_FILE})")
+    print(f"📡 Listening for ALL messages (logging to {LOG_FILE})")
 
     try:
         while True:
