@@ -19,14 +19,25 @@ class MeshtasticListener:
         try:
             node_id = packet.get("fromId", "unknown")
             msg = packet.get("decoded", {}).get("text", "")
+            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
             try:
-                data = json.loads(msg)
-                if isinstance(data, dict):
-                    data["node_id"] = node_id
-                    data["timestamp"] = ts
-                    self.queue.put(data)
-                    print(f"[{ts}] Received from {node_id}: {data}")
+                # data = json.loads(msg)
+                # if isinstance(data, dict):
+                #     "timestamp": ts,
+                #     "node_id": node_id,
+                #     "message": msg
+                #     self.queue.put(data)
+                #     print(f"[{ts}] Received from {node_id}: {data}")
+
+                data = {
+                    "timestamp": ts,
+                    "node_id": node_id,
+                    "message": msg
+                }
+                self.queue.put(data)
+                print(f"[{ts}] From {node_id}: {msg}")
+
             except json.JSONDecodeError:
                 print(f"Ignored non-JSON from {node_id}: {msg}")
         except Exception as e:
