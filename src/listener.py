@@ -25,9 +25,9 @@ class MeshtasticListener:
                 msg = msg.strip()
                 data = json.loads(msg)
                 if isinstance(data, dict):
-                    "timestamp": ts,
-                    "node_id": node_id,
-                    "message": msg
+                    data["timestamp"] = ts
+                    data["node_id"] = node_id
+
                     self.queue.put(data)
                     print(f"[{ts}] Received from {node_id}: {data}")
 
