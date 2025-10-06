@@ -15,7 +15,9 @@ def main():
         while True:
             if not q.empty():
                 data = q.get()
-                log_line = f"[{data['timestamp']}] From {data['node_id']}: {data['message']}\n"
+                log_line = (f"[{data['timestamp']}] From {data['node_id']}: \n"
+                           f"temperature: {data['temperature']}, \n"
+                           f"humidity: {data['humidity']}\n")
 
                 # Write to file
                 with open(LOG_FILE, "a") as f:
