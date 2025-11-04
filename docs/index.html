@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoRa Mesh Network Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Leaflet CSS for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.css" />
+
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/simpleheat@0.4.0/simpleheat.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🌐 LoRa Mesh Network Dashboard</h1>
+            <p class="subtitle">Real-time monitoring of distributed sensor nodes</p>
+            <div class="status-bar">
+                <span class="status-indicator" id="connectionStatus">
+                    <span class="pulse"></span> Connecting...
+                </span>
+                <span class="last-update">Last update: <span id="lastUpdate">--</span></span>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <div class="dashboard-grid">
+            <!-- Live Data Feed -->
+            <section class="card live-feed">
+                <h2>Live Data Feed</h2>
+                <div id="liveDataContainer" class="data-feed-content">
+                    <p class="loading">Waiting for data...</p>
+                </div>
+            </section>
+
+            <!-- Node Statistics -->
+            <section class="card node-stats">
+                <h2>Node Statistics</h2>
+                <div id="nodeStatsContainer" class="stats-grid">
+                    <p class="loading">Loading nodes...</p>
+                </div>
+            </section>
+
+            <!-- Decision Model Output -->
+            <section class="card decisions">
+                <h2>Suggested Action</h2>
+                <div id="decisionsContainer" class="decisions-content">
+                    <p class="loading">Loading decisions...</p>
+                </div>
+            </section>
+
+            <!-- Interactive Map -->
+            <section class="card map-section">
+                <h2>Sensor Network Map</h2>
+                <div class="map-controls">
+                    <label>
+                        Heat Map:
+                        <select id="heatmapMetric">
+                            <option value="temperature">Temperature</option>
+                            <option value="humidity">Humidity</option>
+                            <option value="soil_moisture">Soil Moisture</option>
+                            <option value="sunlight">Sunlight</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="map" class="map-container"></div>
+            </section>
+
+            <!-- Time Series Charts -->
+            <section class="card charts-section">
+                <h2>Historical Data</h2>
+                <div class="chart-controls">
+                    <label>
+                        Time Range:
+                        <select id="timeRange">
+                            <option value="1">Last Hour</option>
+                            <option value="6">Last 6 Hours</option>
+                            <option value="12" selected>Last 12 Hours</option>
+                            <option value="24">Last 24 Hours</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-wrapper">
+                        <h3>Temperature & Humidity</h3>
+                        <canvas id="tempHumidityChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Soil Moisture & Sunlight</h3>
+                        <canvas id="soilSunChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Battery Levels</h3>
+                        <canvas id="batteryChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>LoRa Mesh Network Data Pipeline | Built with Meshtastic & TimescaleDB</p>
+        </footer>
+    </div>
+
+    <!-- Configuration -->
+    <script src="js/config.js"></script>
+    <!-- Main Application -->
+    <script src="js/app.js"></script>
+</body>
+</html>
