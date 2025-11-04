@@ -17,8 +17,11 @@ class TimescaleStorage:
                     id SERIAL PRIMARY KEY,
                     node_id VARCHAR(32),
                     timestamp TIMESTAMP NOT NULL,
+                    soil_moisture FLOAT,
+                    sunlight FLOAT,
                     temperature FLOAT,
-                    humidity FLOAT
+                    humidity FLOAT,
+                    battery_percentage FLOAT
                 );
             """))
             conn.execute(text("SELECT create_hypertable('sensor_data', 'timestamp', if_not_exists => TRUE);"))
