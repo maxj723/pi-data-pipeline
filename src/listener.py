@@ -20,6 +20,7 @@ class MeshtasticListener:
 
             if packet.get("decoded", {}).get("portnum") == "ENVIRONMENTAL_MEASUREMENT":
                 print(f"Received Environmental Telemetry: {packet}")
+                self.queue.put(packet)
 
             # node_id = packet.get("fromId", "unknown")
             # msg = packet.get("decoded", {}).get("text", "")
