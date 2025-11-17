@@ -17,30 +17,34 @@ class MeshtasticListener:
     def _on_receive(self, packet, interface):
         """Callback for each received Meshtastic packet."""
         try:
-            node_id = packet.get("fromId", "unknown")
-            msg = packet.get("decoded", {}).get("text", "")
-            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-            try:
-                msg = msg.strip()
-                data = json.loads(msg)
-                if isinstance(data, dict):
-                    data["timestamp"] = ts
-                    data["node_id"] = node_id
+            if packet.get("decoded", {}).get("portnum") == "ENVIRONMENTAL_MEASUREMENT":
+                print(f"Received Environmental Telemetry: {packet}")
 
-                    self.queue.put(data)
-                    print(f"[{ts}] Received from {node_id}: {data}")
+            # node_id = packet.get("fromId", "unknown")
+            # msg = packet.get("decoded", {}).get("text", "")
+            # ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-                # data = {
-                #     "timestamp": ts,
-                #     "node_id": node_id,
-                #     "message": msg
-                # }
-                # self.queue.put(data)
-                # print(f"[{ts}] From {node_id}: {msg}")
+            # try:
+            #     msg = msg.strip()
+            #     data = json.loads(msg)
+            #     if isinstance(data, dict):
+            #         data["timestamp"] = ts
+            #         data["node_id"] = node_id
 
-            except json.JSONDecodeError:
-                print(f"Ignored non-JSON from {node_id}: {msg}")
+            #         self.queue.put(data)
+            #         print(f"[{ts}] Received from {node_id}: {data}")
+
+            #     # data = {
+            #     #     "timestamp": ts,
+            #     #     "node_id": node_id,
+            #     #     "message": msg
+            #     # }
+            #     # self.queue.put(data)
+            #     # print(f"[{ts}] From {node_id}: {msg}")
+
+            # except json.JSONDecodeError:
+            #     print(f"Ignored non-JSON from {node_id}: {msg}")
         except Exception as e:
             print(f"Error handling packet: {e}")
 
