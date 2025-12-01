@@ -14,14 +14,15 @@ class TimescaleStorage:
         with self.engine.begin() as conn:
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS sensor_db (
-                    id SERIAL PRIMARY KEY,
+                    id SERIAL,
                     node_id VARCHAR(32),
                     timestamp TIMESTAMP NOT NULL,
                     soil_moisture FLOAT,
                     sunlight FLOAT,
                     temperature FLOAT,
                     humidity FLOAT,
-                    battery_percentage FLOAT
+                    battery_percentage FLOAT,
+                    UNIQUE (node_id, timestamp)
                 );
             """))
             conn.execute(text("SELECT create_hypertable('sensor_db', 'timestamp', if_not_exists => TRUE);"))
