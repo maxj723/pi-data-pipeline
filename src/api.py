@@ -163,7 +163,7 @@ class DataAPI:
 
         return nodes
 
-DB_URL = os.getenv("DATABASE_URL", "postgresql://username:password@localhost:5432/sensor_db")
+DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 api = DataAPI(DB_URL)
 
 @app.route('/api/health', methods=['GET'])
