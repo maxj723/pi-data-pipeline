@@ -58,6 +58,8 @@ class MeshtasticListener:
                 
                 # Access the telemetry data
                 telemetry_data = packet["decoded"]["telemetry"]
+
+                print(f"Telemetry Data:\n {telemetry_data}")
                 
                 # Check for the specific 'environmentMetrics' data
                 if "environmentMetrics" in telemetry_data:

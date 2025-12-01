@@ -13,7 +13,7 @@ class TimescaleStorage:
         """Creates sensor_data table and hypertable if not exists."""
         with self.engine.begin() as conn:
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS sensor_data (
+                CREATE TABLE IF NOT EXISTS sensor_db (
                     id SERIAL PRIMARY KEY,
                     node_id VARCHAR(32),
                     timestamp TIMESTAMP NOT NULL,
@@ -24,14 +24,14 @@ class TimescaleStorage:
                     battery_percentage FLOAT
                 );
             """))
-            conn.execute(text("SELECT create_hypertable('sensor_data', 'timestamp', if_not_exists => TRUE);"))
+            conn.execute(text("SELECT create_hypertable('sensor_db', 'timestamp', if_not_exists => TRUE);"))
         print("DB initialized.")
 
     def save(self, data: dict):
         """Insert single record or list of records."""
         try:
             df = pd.DataFrame([data]) if isinstance(data, dict) else pd.DataFrame(data)
-            df.to_sql("sensor_data", con=self.engine, if_exists="append", index=False)
+            df.to_sql("sensor_db", con=self.engine, if_exists="append", index=False)
             print(f"Saved {len(df)} record(s) to DB.")
         except Exception as e:
             print(f"DB Save Error: {e}")
