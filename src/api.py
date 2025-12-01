@@ -23,7 +23,7 @@ class DataAPI:
             result = conn.execute(text("""
                 SELECT node_id, timestamp, soil_moisture, sunlight,
                        temperature, humidity, battery_percentage
-                FROM sensor_data
+                FROM sensor_db
                 ORDER BY timestamp DESC
                 LIMIT :limit
             """), {"limit": limit})
@@ -47,7 +47,7 @@ class DataAPI:
             result = conn.execute(text("""
                 SELECT node_id, timestamp, soil_moisture, sunlight,
                        temperature, humidity, battery_percentage
-                FROM sensor_data
+                FROM sensor_db
                 WHERE timestamp >= NOW() - INTERVAL ':hours hours'
                 ORDER BY timestamp ASC
             """), {"hours": hours})
@@ -78,7 +78,7 @@ class DataAPI:
                     AVG(humidity) as avg_humidity,
                     AVG(battery_percentage) as avg_battery,
                     MAX(timestamp) as last_seen
-                FROM sensor_data
+                FROM sensor_db
                 WHERE timestamp >= NOW() - INTERVAL '24 hours'
                 GROUP BY node_id
                 ORDER BY last_seen DESC
@@ -111,7 +111,7 @@ class DataAPI:
                 AVG(battery_percentage) as avg_battery,
                 MAX(temperature) as max_temp,
                 MIN(temperature) as min_temp
-            FROM sensor_data
+            FROM sensor_db
             WHERE timestamp >= NOW() - INTERVAL ':hours hours'
         """
 
@@ -163,7 +163,7 @@ class DataAPI:
 
         return nodes
 
-DB_URL = os.getenv("DATABASE_URL", "postgresql://username:password@localhost:5432/sensor_db")
+DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 api = DataAPI(DB_URL)
 
 @app.route('/api/health', methods=['GET'])

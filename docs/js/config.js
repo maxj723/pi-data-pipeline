@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:5000', // Update! (RPI ip address)
+    API_BASE_URL: 'http://10.0.0.181:5000',
 
     REFRESH_INTERVALS: { // (ms)
         liveData: 5000,      // 5 seconds
