@@ -15,13 +15,13 @@ from storage import TimescaleStorage
 import os
 
 # Database configuration
-DB_URL = os.getenv("DATABASE_URL", "postgresql://username:password@localhost:5432/sensor_db")
+DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 
 # Test node IDs
 TEST_NODES = [
-    "!abcd1234",
-    "!efgh5678",
-    "!ijkl9012"
+    "!MOCK_NODE_1",
+    "!MOCK_NODE_2",
+    "!MOCK_NODE_3"
 ]
 
 def generate_sensor_reading(node_id):

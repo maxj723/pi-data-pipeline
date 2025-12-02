@@ -7,12 +7,13 @@ from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for GitHub Pages access
+CORS(app)
 
 class DataAPI:
     """
     REST API for serving sensor data from TimescaleDB
     """
+
     def __init__(self, db_url: str):
         self.db_url = db_url
         self.engine = create_engine(db_url, pool_pre_ping=True)
@@ -39,10 +40,12 @@ class DataAPI:
                     "humidity": float(row[5]) if row[5] is not None else None,
                     "battery_percentage": float(row[6]) if row[6] is not None else None
                 })
+
             return data
 
     def get_historical_data(self, hours=24):
         """Get historical data for the past N hours"""
+
         with self.engine.connect() as conn:
             result = conn.execute(text("""
                 SELECT node_id, timestamp, soil_moisture, sunlight,
@@ -63,10 +66,12 @@ class DataAPI:
                     "humidity": float(row[5]) if row[5] is not None else None,
                     "battery_percentage": float(row[6]) if row[6] is not None else None
                 })
+
             return data
 
     def get_node_stats(self):
         """Get statistics per node"""
+
         with self.engine.connect() as conn:
             result = conn.execute(text("""
                 SELECT
@@ -96,10 +101,12 @@ class DataAPI:
                     "avg_battery": float(row[6]) if row[6] else None,
                     "last_seen": row[7].isoformat() if row[7] else None
                 })
+
             return stats
 
     def get_timeseries_data(self, node_id=None, hours=12):
         """Get time-series data for charting"""
+
         base_query = """
             SELECT
                 time_bucket('5 minutes', timestamp) AS bucket,
@@ -143,15 +150,16 @@ class DataAPI:
                     "max_temp": float(row[7]) if row[7] else None,
                     "min_temp": float(row[8]) if row[8] else None
                 })
+
             return data
 
     def get_node_locations(self):
         """Get node locations for map visualization"""
-        # For now, return mock data (UPDATE ONCE PLACED!)
+
         nodes = [
-            {"node_id": "!abcd1234", "lat": 39.6837, "lon": -75.7497, "name": "Node 1"},
-            {"node_id": "!efgh5678", "lat": 39.6847, "lon": -75.7507, "name": "Node 2"},
-            {"node_id": "!ijkl9012", "lat": 39.6857, "lon": -75.7487, "name": "Node 3"}
+            {"node_id": "!MOCK_NODE_1", "lat": 39.6837, "lon": -75.7497, "name": "Mock Node 1"},
+            {"node_id": "!MOCK_NODE_2", "lat": 39.6847, "lon": -75.7507, "name": "Mock Node 2"},
+            {"node_id": "!MOCK_NODE_3", "lat": 39.6857, "lon": -75.7487, "name": "Mock Node 3"}
         ]
 
         stats = self.get_node_stats()

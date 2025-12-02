@@ -16,7 +16,7 @@ from listener import MeshtasticListener
 from storage import TimescaleStorage
 
 # Database configuration
-# DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
+DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 
 def main():
     """Main loop that listens for Meshtastic messages and saves to database"""
@@ -26,17 +26,17 @@ def main():
     print()
 
     # Initialize storage
-    # print("Connecting to database...")
-    # storage = TimescaleStorage(DB_URL)
+    print("Connecting to database...")
+    storage = TimescaleStorage(DB_URL)
 
     # Ensure database is initialized
-    # try:
-    #     storage.init_db()
-    #     print(" Database ready")
-    # except Exception as e:
-    #     print(f"L Database initialization error: {e}")
-    #     print("Please check your database connection and try again.")
-    #     return
+    try:
+        storage.init_db()
+        print("Database ready")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        print("Please check your database connection and try again.")
+        return
 
     print()
 
@@ -46,7 +46,7 @@ def main():
 
     try:
         queue = listener.start()
-        print(" Listener started successfully")
+        print("Listener started successfully")
         print()
         print("Waiting for messages... (Press Ctrl+C to stop)")
         print("-" * 60)
@@ -57,27 +57,27 @@ def main():
             try:
                 # Check if there's data in the queue (non-blocking with timeout)
                 if not queue.empty():
-                    data = queue.get(timeout=1)
+                    telemetry_packet = queue.get(timeout=1)
 
                     # Log the received data
-                    print(f"=� Received: {data}")
+                    print(f"Received: {telemetry_packet}")
 
                     # Save to database
-                    # storage.save(data)
+                    storage.save(telemetry_packet)
 
                 else:
                     # Sleep briefly to avoid busy-waiting
                     time.sleep(0.1)
 
             except KeyboardInterrupt:
-                print("\n\n�  Stopping listener...")
+                print("\n\nStopping listener...")
                 break
             except Exception as e:
-                print(f"�  Error processing message: {e}")
+                print(f"Error processing message: {e}")
                 time.sleep(1)  # Brief pause before continuing
 
     except Exception as e:
-        print(f"L Failed to start listener: {e}")
+        print(f"Failed to start listener: {e}")
         print("\nTroubleshooting:")
         print("1. Make sure your Meshtastic device is connected via USB")
         print("2. Check that you have permissions to access the serial port")
@@ -86,7 +86,7 @@ def main():
 
     print()
     print("=" * 60)
-    print(" Pipeline stopped successfully")
+    print("Pipeline stopped successfully")
     print("=" * 60)
 
 if __name__ == "__main__":
