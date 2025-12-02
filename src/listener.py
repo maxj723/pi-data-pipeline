@@ -3,7 +3,7 @@ import meshtastic.serial_interface
 from pubsub import pub
 import time
 from queue import Queue
-from data_packet import TelemetryPacket
+from data_packet import EnvironmentPacket, PowerPacket
 
 class MeshtasticListener:
     """
@@ -16,36 +16,35 @@ class MeshtasticListener:
         self.interface = None
 
     def _on_receive(self, packet, interface):
-        """ Callback for each received Meshtastic packet. """
-
         try:
             if "telemetry" in packet.get("decoded", {}):
-
                 telemetry_data = packet["decoded"]["telemetry"]
+                print(f'Telemetry data: {telemetry_data}')
+
                 if "environmentMetrics" in telemetry_data:
                     node_id = packet.get("fromId", "unknown")
                     ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-                    print(f'Telemetry data: {telemetry_data}')
-                    print()
-                    
-
                     env_metrics = telemetry_data["environmentMetrics"]
+                    environment_packet = EnvironmentPacket(env_metrics, node_id, ts)
 
-                    print(f'Environmental metrics: {env_metrics}')
+                    self.queue.put(environment_packet)
+                    print(f"[{ts}] Received Telemetry from {node_id}: {environment_packet}")
 
-                    
-                    telemetry_packet = TelemetryPacket(env_metrics, node_id, ts)
+                elif "powerMetrics" in telemetry_data:
+                    node_id = packet.get("fromId", "unknown")
+                    ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-                    self.queue.put(telemetry_packet)
-                    print(f"[{ts}] Received Telemetry from {node_id}: {telemetry_packet}")
+                    pow_metrics = telemetry_data["powerMetrics"]
+                    power_packet = PowerPacket(pow_metrics, node_id, ts)
+
+                    self.queue.put(power_packet)
+                    print(f"[{ts}] Received Telemetry from {node_id}: {power_packet}")
 
         except Exception as e:
             print(f"Error handling packet: {e}")
 
     def start(self):
-        """ Initialize listener and subscribe to Meshtastic events. """
-
         self.interface = meshtastic.serial_interface.SerialInterface()
         pub.subscribe(self._on_receive, "meshtastic.receive")
         print("Meshtastic listener started.")

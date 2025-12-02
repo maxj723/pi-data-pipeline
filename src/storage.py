@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, text
 import pandas as pd
-from data_packet import TelemetryPacket
+from data_packet import EnvironmentPacket, PowerPacket
 
 class TimescaleStorage:
     def __init__(self, db_url: str):
@@ -28,7 +28,7 @@ class TimescaleStorage:
 
     def save(self, data):
         try:
-            if isinstance(data, TelemetryPacket):
+            if isinstance(data, EnvironmentPacket) or isinstance(data, PowerPacket):
                 data = data.to_dict()
 
             df = pd.DataFrame([data])

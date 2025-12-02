@@ -1,6 +1,6 @@
 from typing import Optional
 
-class TelemetryPacket:
+class EnvironmentPacket:
     def __init__(self, telemetry_data: dict, node_id: str, timestamp: str):
         self.node_id = node_id
         self.timestamp = timestamp
@@ -9,10 +9,9 @@ class TelemetryPacket:
         self.relative_humidity: Optional[float] = telemetry_data.get("relativeHumidity")
         self.soil_moisture: Optional[float] = telemetry_data.get("soilMoisture")
         self.lux: Optional[float] = telemetry_data.get("lux")
-        self.voltage: Optional[float] = telemetry_data.get("voltage")
 
     def __repr__(self):
-        return (f"TelemetryPacket(node_id={self.node_id}, timestamp={self.timestamp}, "
+        return (f"EnvironmentPacket(node_id={self.node_id}, timestamp={self.timestamp}, "
                 f"temp={self.temperature}, humidity={self.relative_humidity}, "
                 f"soil moisture={self.soil_moisture}, lux={self.lux}, "
                 f"voltage={self.voltage})")
@@ -25,5 +24,22 @@ class TelemetryPacket:
             "relative_humidity":    self.relative_humidity,
             "soil_moisture":        self.soil_moisture,
             "lux":                  self.lux,
+        }
+
+class PowerPacket:
+    def __init__(self, telemetry_data: dict, node_id: str, timestamp: str):
+        self.node_id = node_id
+        self.timestamp = timestamp
+
+        self.voltage: Optional[float] = telemetry_data.get("voltage")
+
+    def __repr__(self):
+        return (f"PowerPacket(node_id={self.node_id}, timestamp={self.timestamp}, "
+                f"voltage={self.voltage})")
+
+    def to_dict(self) -> dict:
+        return {
+            "node_id":              self.node_id,
+            "timestamp":            self.timestamp,
             "voltage":              self.voltage,
         }
