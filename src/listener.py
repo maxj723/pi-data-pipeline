@@ -23,7 +23,7 @@ class MeshtasticListener:
 
                 if "environmentMetrics" in telemetry_data:
                     node_id = packet.get("fromId", "unknown")
-                    ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+                    ts = time.strftime('%Y-%m-%d %H:%M', time.localtime())
 
                     env_metrics = telemetry_data["environmentMetrics"]
                     environment_packet = EnvironmentPacket(env_metrics, node_id, ts)
@@ -33,7 +33,7 @@ class MeshtasticListener:
 
                 elif "powerMetrics" in telemetry_data:
                     node_id = packet.get("fromId", "unknown")
-                    ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+                    ts = time.strftime('%Y-%m-%d %H:%M', time.localtime())
 
                     pow_metrics = telemetry_data["powerMetrics"]
                     power_packet = PowerPacket(pow_metrics, node_id, ts)

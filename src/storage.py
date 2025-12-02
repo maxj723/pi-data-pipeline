@@ -1,5 +1,4 @@
 from sqlalchemy import create_engine, text
-import pandas as pd
 from data_packet import EnvironmentPacket, PowerPacket
 
 class TimescaleStorage:
@@ -27,13 +26,47 @@ class TimescaleStorage:
         print("DB initialized.")
 
     def save(self, data):
+        """Insert or update record using UPSERT logic.
+        If a record with the same (node_id, timestamp) exists, merge the new data."""
         try:
             if isinstance(data, EnvironmentPacket) or isinstance(data, PowerPacket):
                 data = data.to_dict()
 
-            df = pd.DataFrame([data])
-            df.to_sql("sensor_db", con=self.engine, if_exists="append", index=False)
-            print(f"Saved {len(df)} record(s) to DB.")
+            # Build column list and values dynamically based on provided data
+            columns = ['node_id', 'timestamp']
+            values = [data.get('node_id'), data.get('timestamp')]
+
+            # Add optional sensor fields if they exist in the data
+            optional_fields = ['temperature', 'relative_humidity', 'soil_moisture', 'lux', 'voltage']
+            for field in optional_fields:
+                if field in data and data[field] is not None:
+                    columns.append(field)
+                    values.append(data[field])
+
+            # Create placeholders for SQL
+            placeholders = ', '.join([f':{i}' for i in range(len(values))])
+            columns_str = ', '.join(columns)
+
+            # Build UPDATE clause - only update non-NULL values from new data
+            update_pairs = []
+            for field in optional_fields:
+                if field in data and data[field] is not None:
+                    update_pairs.append(f"{field} = EXCLUDED.{field}")
+
+            update_clause = ', '.join(update_pairs) if update_pairs else "timestamp = EXCLUDED.timestamp"
+
+            # UPSERT query
+            query = text(f"""
+                INSERT INTO sensor_db ({columns_str})
+                VALUES ({placeholders})
+                ON CONFLICT (node_id, timestamp)
+                DO UPDATE SET {update_clause}
+            """)
+
+            with self.engine.begin() as conn:
+                conn.execute(query, values)
+
+            print(f"Saved/Updated record for {data.get('node_id')} at {data.get('timestamp')}")
 
         except Exception as e:
             print(f"DB Save Error: {e}")
