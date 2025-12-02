@@ -62,7 +62,7 @@ def main():
                     storage.save(telemetry_packet)
 
                 else:
-                    time.sleep(30)
+                    time.sleep(0.1)
 
             except KeyboardInterrupt:
                 print("\n\nStopping listener...")

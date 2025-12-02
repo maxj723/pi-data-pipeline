@@ -13,8 +13,7 @@ class EnvironmentPacket:
     def __repr__(self):
         return (f"EnvironmentPacket(node_id={self.node_id}, timestamp={self.timestamp}, "
                 f"temp={self.temperature}, humidity={self.relative_humidity}, "
-                f"soil moisture={self.soil_moisture}, lux={self.lux}, "
-                f"voltage={self.voltage})")
+                f"soil moisture={self.soil_moisture}, lux={self.lux})")
 
     def to_dict(self) -> dict:
         return {
@@ -31,7 +30,7 @@ class PowerPacket:
         self.node_id = node_id
         self.timestamp = timestamp
 
-        self.voltage: Optional[float] = telemetry_data.get("voltage")
+        self.voltage: Optional[float] = telemetry_data.get("ch1Voltage")
 
     def __repr__(self):
         return (f"PowerPacket(node_id={self.node_id}, timestamp={self.timestamp}, "
