@@ -1,6 +1,5 @@
 const CONFIG = {
-    //API_BASE_URL: 'http://10.0.0.181:5000', // Pi IP address
-    API_BASE_URL: 'http://10.12.161.196:5000',
+    API_BASE_URL: 'http://group1-mesh:5000/',
 
     REFRESH_INTERVALS: { // (ms)
         liveData: 5000,      // 5 seconds
