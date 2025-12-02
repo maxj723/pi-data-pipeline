@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_BASE_URL: 'http://10.0.0.181:5000',
+    API_BASE_URL: 'http://10.0.0.181:5000', // Pi IP address
 
     REFRESH_INTERVALS: { // (ms)
         liveData: 5000,      // 5 seconds
@@ -26,7 +26,7 @@ const CONFIG = {
     },
 
     MAP: {
-        defaultCenter: [39.6837, -75.7497],  // UPDATE!
+        defaultCenter: [41.7052, 86.2352],
         defaultZoom: 15,
         tileLayer: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
