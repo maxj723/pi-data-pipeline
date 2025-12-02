@@ -32,28 +32,18 @@ class TimescaleStorage:
             if isinstance(data, EnvironmentPacket) or isinstance(data, PowerPacket):
                 data = data.to_dict()
 
-            # Build column list and values dynamically based on provided data
-            columns = ['node_id', 'timestamp']
-            values = [data.get('node_id'), data.get('timestamp')]
-
-            # Add optional sensor fields if they exist in the data
-            optional_fields = ['temperature', 'relative_humidity', 'soil_moisture', 'lux', 'voltage']
-            for field in optional_fields:
-                if field in data and data[field] is not None:
-                    columns.append(field)
-                    values.append(data[field])
-
-            # Create placeholders for SQL
-            placeholders = ', '.join([f':{i}' for i in range(len(values))])
+            # Get column names and create placeholders
+            columns = list(data.keys())
             columns_str = ', '.join(columns)
+            placeholders = ', '.join([f':{col}' for col in columns])
 
-            # Build UPDATE clause - only update non-NULL values from new data
-            update_pairs = []
-            for field in optional_fields:
-                if field in data and data[field] is not None:
-                    update_pairs.append(f"{field} = EXCLUDED.{field}")
+            # Build UPDATE clause for fields that have data (excluding node_id and timestamp)
+            update_fields = [col for col in columns if col not in ['node_id', 'timestamp']]
+            update_clause = ', '.join([f"{field} = EXCLUDED.{field}" for field in update_fields])
 
-            update_clause = ', '.join(update_pairs) if update_pairs else "timestamp = EXCLUDED.timestamp"
+            # If no fields to update (only node_id and timestamp), just update timestamp
+            if not update_clause:
+                update_clause = "timestamp = EXCLUDED.timestamp"
 
             # UPSERT query
             query = text(f"""
@@ -64,7 +54,7 @@ class TimescaleStorage:
             """)
 
             with self.engine.begin() as conn:
-                conn.execute(query, values)
+                conn.execute(query, data)
 
             print(f"Saved/Updated record for {data.get('node_id')} at {data.get('timestamp')}")
 
