@@ -194,24 +194,24 @@ class DashboardApp {
             </div>
             <div class="sensor-readings">
                 <div class="sensor-value">
-                    <span class="sensor-label">Soil Moisture</span>
-                    <span class="sensor-number">${this.formatValue(data.soil_moisture, '%')}</span>
-                </div>
-                <div class="sensor-value">
-                    <span class="sensor-label">Sunlight</span>
-                    <span class="sensor-number">${this.formatValue(data.sunlight, ' lux')}</span>
-                </div>
-                <div class="sensor-value">
                     <span class="sensor-label">Temperature</span>
                     <span class="sensor-number">${this.formatValue(data.temperature, '°C')}</span>
                 </div>
                 <div class="sensor-value">
                     <span class="sensor-label">Humidity</span>
-                    <span class="sensor-number">${this.formatValue(data.humidity, '%')}</span>
+                    <span class="sensor-number">${this.formatValue(data.relative_humidity, '%')}</span>
                 </div>
                 <div class="sensor-value">
-                    <span class="sensor-label">Battery</span>
-                    <span class="sensor-number">${this.formatValue(data.battery_percentage, '%')}</span>
+                    <span class="sensor-label">Soil Moisture</span>
+                    <span class="sensor-number">${this.formatValue(data.soil_moisture, '')}</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">Light</span>
+                    <span class="sensor-number">${this.formatValue(data.lux, ' lux')}</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">Voltage</span>
+                    <span class="sensor-number">${this.formatValue(data.voltage, 'V')}</span>
                 </div>
             </div>
         `;
@@ -258,8 +258,8 @@ class DashboardApp {
                         <div class="avg-number">${this.formatValue(stat.avg_humidity, '%')}</div>
                     </div>
                     <div class="avg-value">
-                        <div class="avg-label">Avg Battery</div>
-                        <div class="avg-number">${this.formatValue(stat.avg_battery, '%')}</div>
+                        <div class="avg-label">Avg Voltage</div>
+                        <div class="avg-number">${this.formatValue(stat.avg_voltage, 'V')}</div>
                     </div>
                 </div>
             `;
@@ -344,8 +344,9 @@ class DashboardApp {
                 <strong>${node.name || node.node_id}</strong><br>
                 Temp: ${this.formatValue(node.avg_temp, '°C')}<br>
                 Humidity: ${this.formatValue(node.avg_humidity, '%')}<br>
-                Soil: ${this.formatValue(node.avg_soil_moisture, '%')}<br>
-                Battery: ${this.formatValue(node.avg_battery, '%')}
+                Soil: ${this.formatValue(node.avg_soil_moisture, '')}<br>
+                Light: ${this.formatValue(node.avg_lux, ' lux')}<br>
+                Voltage: ${this.formatValue(node.avg_voltage, 'V')}
             `;
 
             marker.bindPopup(popupContent);
@@ -365,8 +366,8 @@ class DashboardApp {
                 case 'soil_moisture':
                     intensity = node.avg_soil_moisture || 0;
                     break;
-                case 'sunlight':
-                    intensity = node.avg_sunlight || 0;
+                case 'lux':
+                    intensity = node.avg_lux || 0;
                     break;
             }
 
@@ -489,7 +490,7 @@ class DashboardApp {
         this.charts.tempHumidity.data.datasets = tempHumidityDatasets;
         this.charts.tempHumidity.update();
 
-        // Update Soil & Sunlight Chart
+        // Update Soil & Light Chart
         const soilSunDatasets = [];
         Object.keys(nodeData).forEach(nodeId => {
             soilSunDatasets.push({
@@ -501,10 +502,10 @@ class DashboardApp {
             });
 
             soilSunDatasets.push({
-                label: `${nodeId} - Sunlight`,
-                data: nodeData[nodeId].map(d => d.avg_sunlight),
-                borderColor: CONFIG.CHART_COLORS.sunlight,
-                backgroundColor: CONFIG.CHART_COLORS_ALPHA.sunlight,
+                label: `${nodeId} - Light`,
+                data: nodeData[nodeId].map(d => d.avg_lux),
+                borderColor: CONFIG.CHART_COLORS.lux,
+                backgroundColor: CONFIG.CHART_COLORS_ALPHA.lux,
                 tension: 0.4
             });
         });
@@ -513,21 +514,21 @@ class DashboardApp {
         this.charts.soilSun.data.datasets = soilSunDatasets;
         this.charts.soilSun.update();
 
-        // Update Battery Chart
-        const batteryDatasets = [];
+        // Update Voltage Chart
+        const voltageDatasets = [];
         Object.keys(nodeData).forEach(nodeId => {
-            batteryDatasets.push({
-                label: `${nodeId} - Battery`,
-                data: nodeData[nodeId].map(d => d.avg_battery),
-                borderColor: CONFIG.CHART_COLORS.battery,
-                backgroundColor: CONFIG.CHART_COLORS_ALPHA.battery,
+            voltageDatasets.push({
+                label: `${nodeId} - Voltage`,
+                data: nodeData[nodeId].map(d => d.avg_voltage),
+                borderColor: CONFIG.CHART_COLORS.voltage,
+                backgroundColor: CONFIG.CHART_COLORS_ALPHA.voltage,
                 tension: 0.4,
                 fill: true
             });
         });
 
         this.charts.battery.data.labels = labels;
-        this.charts.battery.data.datasets = batteryDatasets;
+        this.charts.battery.data.datasets = voltageDatasets;
         this.charts.battery.update();
     }
 
