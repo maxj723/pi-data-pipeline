@@ -22,8 +22,8 @@ class DataAPI:
         """Get the most recent sensor readings"""
         with self.engine.connect() as conn:
             result = conn.execute(text("""
-                SELECT node_id, timestamp, soil_moisture, sunlight,
-                       temperature, humidity, battery_percentage
+                SELECT node_id, timestamp, temperature, relative_humidity,
+                       soil_moisture, lux, voltage
                 FROM sensor_db
                 ORDER BY timestamp DESC
                 LIMIT :limit
@@ -34,11 +34,11 @@ class DataAPI:
                 data.append({
                     "node_id": row[0],
                     "timestamp": row[1].isoformat() if row[1] else None,
-                    "soil_moisture": float(row[2]) if row[2] is not None else None,
-                    "sunlight": float(row[3]) if row[3] is not None else None,
-                    "temperature": float(row[4]) if row[4] is not None else None,
-                    "humidity": float(row[5]) if row[5] is not None else None,
-                    "battery_percentage": float(row[6]) if row[6] is not None else None
+                    "temperature": float(row[2]) if row[2] is not None else None,
+                    "relative_humidity": float(row[3]) if row[3] is not None else None,
+                    "soil_moisture": float(row[4]) if row[4] is not None else None,
+                    "lux": float(row[5]) if row[5] is not None else None,
+                    "voltage": float(row[6]) if row[6] is not None else None
                 })
 
             return data
@@ -48,8 +48,8 @@ class DataAPI:
 
         with self.engine.connect() as conn:
             result = conn.execute(text("""
-                SELECT node_id, timestamp, soil_moisture, sunlight,
-                       temperature, humidity, battery_percentage
+                SELECT node_id, timestamp, temperature, relative_humidity,
+                       soil_moisture, lux, voltage
                 FROM sensor_db
                 WHERE timestamp >= NOW() - INTERVAL ':hours hours'
                 ORDER BY timestamp ASC
@@ -60,11 +60,11 @@ class DataAPI:
                 data.append({
                     "node_id": row[0],
                     "timestamp": row[1].isoformat() if row[1] else None,
-                    "soil_moisture": float(row[2]) if row[2] is not None else None,
-                    "sunlight": float(row[3]) if row[3] is not None else None,
-                    "temperature": float(row[4]) if row[4] is not None else None,
-                    "humidity": float(row[5]) if row[5] is not None else None,
-                    "battery_percentage": float(row[6]) if row[6] is not None else None
+                    "temperature": float(row[2]) if row[2] is not None else None,
+                    "relative_humidity": float(row[3]) if row[3] is not None else None,
+                    "soil_moisture": float(row[4]) if row[4] is not None else None,
+                    "lux": float(row[5]) if row[5] is not None else None,
+                    "voltage": float(row[6]) if row[6] is not None else None
                 })
 
             return data
@@ -77,11 +77,11 @@ class DataAPI:
                 SELECT
                     node_id,
                     COUNT(*) as reading_count,
-                    AVG(soil_moisture) as avg_soil_moisture,
-                    AVG(sunlight) as avg_sunlight,
                     AVG(temperature) as avg_temp,
-                    AVG(humidity) as avg_humidity,
-                    AVG(battery_percentage) as avg_battery,
+                    AVG(relative_humidity) as avg_humidity,
+                    AVG(soil_moisture) as avg_soil_moisture,
+                    AVG(lux) as avg_lux,
+                    AVG(voltage) as avg_voltage,
                     MAX(timestamp) as last_seen
                 FROM sensor_db
                 WHERE timestamp >= NOW() - INTERVAL '24 hours'
@@ -94,11 +94,11 @@ class DataAPI:
                 stats.append({
                     "node_id": row[0],
                     "reading_count": row[1],
-                    "avg_soil_moisture": float(row[2]) if row[2] else None,
-                    "avg_sunlight": float(row[3]) if row[3] else None,
-                    "avg_temp": float(row[4]) if row[4] else None,
-                    "avg_humidity": float(row[5]) if row[5] else None,
-                    "avg_battery": float(row[6]) if row[6] else None,
+                    "avg_temp": float(row[2]) if row[2] else None,
+                    "avg_humidity": float(row[3]) if row[3] else None,
+                    "avg_soil_moisture": float(row[4]) if row[4] else None,
+                    "avg_lux": float(row[5]) if row[5] else None,
+                    "avg_voltage": float(row[6]) if row[6] else None,
                     "last_seen": row[7].isoformat() if row[7] else None
                 })
 
@@ -111,11 +111,11 @@ class DataAPI:
             SELECT
                 time_bucket('5 minutes', timestamp) AS bucket,
                 node_id,
-                AVG(soil_moisture) as avg_soil_moisture,
-                AVG(sunlight) as avg_sunlight,
                 AVG(temperature) as avg_temp,
-                AVG(humidity) as avg_humidity,
-                AVG(battery_percentage) as avg_battery,
+                AVG(relative_humidity) as avg_humidity,
+                AVG(soil_moisture) as avg_soil_moisture,
+                AVG(lux) as avg_lux,
+                AVG(voltage) as avg_voltage,
                 MAX(temperature) as max_temp,
                 MIN(temperature) as min_temp
             FROM sensor_db
@@ -142,11 +142,11 @@ class DataAPI:
                 data.append({
                     "timestamp": row[0].isoformat() if row[0] else None,
                     "node_id": row[1],
-                    "avg_soil_moisture": float(row[2]) if row[2] else None,
-                    "avg_sunlight": float(row[3]) if row[3] else None,
-                    "avg_temp": float(row[4]) if row[4] else None,
-                    "avg_humidity": float(row[5]) if row[5] else None,
-                    "avg_battery": float(row[6]) if row[6] else None,
+                    "avg_temp": float(row[2]) if row[2] else None,
+                    "avg_humidity": float(row[3]) if row[3] else None,
+                    "avg_soil_moisture": float(row[4]) if row[4] else None,
+                    "avg_lux": float(row[5]) if row[5] else None,
+                    "avg_voltage": float(row[6]) if row[6] else None,
                     "max_temp": float(row[7]) if row[7] else None,
                     "min_temp": float(row[8]) if row[8] else None
                 })
@@ -230,8 +230,8 @@ def get_decisions():
             decision_text = "Low soil moisture detected"
             action = "water_needed"
             confidence = 0.88
-        elif reading.get("battery_percentage") and reading["battery_percentage"] < 20:
-            decision_text = "Low battery warning"
+        elif reading.get("voltage") and reading["voltage"] < 3.0:
+            decision_text = "Low voltage warning"
             action = "check_battery"
             confidence = 1.0
         elif reading.get("temperature") and reading["temperature"] > 35:
@@ -248,7 +248,7 @@ def get_decisions():
             "metrics": {
                 "soil_moisture": reading.get("soil_moisture"),
                 "temperature": reading.get("temperature"),
-                "battery": reading.get("battery_percentage")
+                "voltage": reading.get("voltage")
             }
         })
 

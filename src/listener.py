@@ -26,7 +26,15 @@ class MeshtasticListener:
                     node_id = packet.get("fromId", "unknown")
                     ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
+                    print(f'Telemetry data: {telemetry_data}')
+                    print()
+                    
+
                     env_metrics = telemetry_data["environmentMetrics"]
+
+                    print(f'Environmental metrics: {env_metrics}')
+
+                    
                     telemetry_packet = TelemetryPacket(env_metrics, node_id, ts)
 
                     self.queue.put(telemetry_packet)

@@ -3,9 +3,6 @@ import pandas as pd
 from data_packet import TelemetryPacket
 
 class TimescaleStorage:
-    """
-    Handles connection to a TimescaleDB instance and writes data into it.
-    """
     def __init__(self, db_url: str):
         self.db_url = db_url
         self.engine = create_engine(db_url, pool_pre_ping=True)
@@ -20,11 +17,9 @@ class TimescaleStorage:
                     timestamp TIMESTAMP NOT NULL,
                     temperature FLOAT,
                     relative_humidity FLOAT,
-                    barometric_pressure FLOAT,
-                    gas_resistance FLOAT,
+                    soil_moisture FLOAT,
+                    lux FLOAT,
                     voltage FLOAT,
-                    current FLOAT,
-                    iaq INTEGER,
                     UNIQUE (node_id, timestamp)
                 );
             """))
@@ -32,14 +27,13 @@ class TimescaleStorage:
         print("DB initialized.")
 
     def save(self, data):
-        """Insert single TelemetryPacket or dict record."""
         try:
-            # Convert TelemetryPacket to dict if needed
             if isinstance(data, TelemetryPacket):
                 data = data.to_dict()
 
             df = pd.DataFrame([data])
             df.to_sql("sensor_db", con=self.engine, if_exists="append", index=False)
             print(f"Saved {len(df)} record(s) to DB.")
+
         except Exception as e:
             print(f"DB Save Error: {e}")

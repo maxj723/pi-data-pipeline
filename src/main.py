@@ -47,10 +47,6 @@ def main():
     try:
         queue = listener.start()
         print("Listener started successfully")
-        print()
-        print("Waiting for messages... (Press Ctrl+C to stop)")
-        print("-" * 60)
-        print()
 
         # Main loop - process messages from the queue
         while True:
@@ -66,8 +62,7 @@ def main():
                     storage.save(telemetry_packet)
 
                 else:
-                    # Sleep briefly to avoid busy-waiting
-                    time.sleep(0.1)
+                    time.sleep(30)
 
             except KeyboardInterrupt:
                 print("\n\nStopping listener...")
