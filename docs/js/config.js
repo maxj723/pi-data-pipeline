@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_BASE_URL: 'https://group1-mesh:5000/',
+    API_BASE_URL: 'https://tripodal-sunny-triunitarian.ngrok-free.dev', // ngrok url for https forwarding
 
     REFRESH_INTERVALS: { // (ms)
         liveData: 5000,      // 5 seconds

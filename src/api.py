@@ -271,19 +271,4 @@ def stream():
 
 if __name__ == '__main__':
     # Run on all interfaces, port 5000
-    # For HTTPS: set ssl_context to use certificate files
-    # To use HTTP only, set ssl_context=None
-    import os
-
-    cert_file = os.path.join(os.path.dirname(__file__), '..', 'cert.pem')
-    key_file = os.path.join(os.path.dirname(__file__), '..', 'key.pem')
-
-    # Use HTTPS if certificate files exist, otherwise HTTP
-    if os.path.exists(cert_file) and os.path.exists(key_file):
-        ssl_context = (cert_file, key_file)
-        print(f"🔒 Starting server with HTTPS on port 5000")
-    else:
-        ssl_context = None
-        print(f"⚠️  Starting server with HTTP on port 5000 (no SSL certificates found)")
-
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True, ssl_context=ssl_context)
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
