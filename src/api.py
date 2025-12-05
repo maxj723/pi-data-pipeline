@@ -157,7 +157,7 @@ class DataAPI:
         """Get node locations for map visualization"""
 
         nodes = [
-            {"node_id": "!512397a3", "lat": 41.41557, "lon": -86.14100, "name": "Dev Node"}
+            {"node_id": "!512397a3", "lat": 41.698806, "lon": -86.236083, "name": "Dev Node"}
         ]
 
         stats = self.get_node_stats()
