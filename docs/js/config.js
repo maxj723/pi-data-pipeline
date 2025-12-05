@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_BASE_URL: 'https://tripodal-sunny-triunitarian.ngrok-free.dev', // ngrok url for https forwarding
+    API_BASE_URL: 'https://commit-speech-concord-drawing.trycloudflare.com', // cloudflare url for https tunneling
 
     REFRESH_INTERVALS: { // (ms)
         liveData: 5000,      // 5 seconds
