@@ -258,16 +258,39 @@ def get_decisions():
 def stream():
     """Server-Sent Events endpoint for real-time updates"""
     def event_stream():
+        # Send initial comment to establish connection
+        yield ": connected\n\n"
+
+        last_id = None
         while True:
-            # Check for new data every 3 seconds
-            time.sleep(3)
+            try:
+                # Get latest reading
+                latest = api.get_latest_data(limit=1)
+                if latest and latest[0]:
+                    current_id = f"{latest[0].get('node_id')}_{latest[0].get('timestamp')}"
 
-            # Get latest reading
-            latest = api.get_latest_data(limit=1)
-            if latest:
-                yield f"data: {json.dumps(latest[0])}\n\n"
+                    # Only send if it's new data
+                    if current_id != last_id:
+                        yield f"data: {json.dumps(latest[0])}\n\n"
+                        last_id = current_id
+                    else:
+                        # Send keepalive comment
+                        yield ": keepalive\n\n"
+                else:
+                    # Send keepalive if no data
+                    yield ": keepalive\n\n"
 
-    return Response(event_stream(), mimetype="text/event-stream")
+                # Wait 3 seconds before next check
+                time.sleep(3)
+            except Exception as e:
+                print(f"SSE Error: {e}")
+                yield f": error {str(e)}\n\n"
+                time.sleep(3)
+
+    response = Response(event_stream(), mimetype="text/event-stream")
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['X-Accel-Buffering'] = 'no'
+    return response
 
 if __name__ == '__main__':
     # Run on all interfaces, port 5000
