@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_BASE_URL: 'http://group1-mesh:5000/',
+    API_BASE_URL: 'https://group1-mesh:5000/',
 
     REFRESH_INTERVALS: { // (ms)
         liveData: 5000,      // 5 seconds
