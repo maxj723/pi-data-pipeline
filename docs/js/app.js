@@ -142,7 +142,7 @@ class DashboardApp {
 
     updateLastUpdateTime() {
         const now = new Date();
-        document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+        document.getElementById('lastUpdate').textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     }
 
     updateLiveDataFeed(dataArray) {
@@ -185,7 +185,12 @@ class DashboardApp {
         const item = document.createElement('div');
         item.className = 'data-item';
 
-        const timestamp = new Date(data.timestamp).toLocaleString();
+        const timestamp = new Date(data.timestamp).toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
 
         item.innerHTML = `
             <div class="data-item-header">
@@ -238,7 +243,12 @@ class DashboardApp {
             const card = document.createElement('div');
             card.className = 'node-stat-card';
 
-            const lastSeen = new Date(stat.last_seen).toLocaleString();
+            const lastSeen = new Date(stat.last_seen).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
 
             card.innerHTML = `
                 <div class="node-stat-header">
@@ -291,7 +301,12 @@ class DashboardApp {
 
             card.className = cardClass;
 
-            const timestamp = new Date(decision.timestamp).toLocaleString();
+            const timestamp = new Date(decision.timestamp).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
 
             card.innerHTML = `
                 <div class="decision-header">
@@ -460,7 +475,7 @@ class DashboardApp {
         });
 
         const labels = timeSeriesData
-            .map(d => new Date(d.timestamp).toLocaleTimeString())
+            .map(d => new Date(d.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
             .filter((v, i, a) => a.indexOf(v) === i);
 
         // Update Temperature & Humidity Chart
