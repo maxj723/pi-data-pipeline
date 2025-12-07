@@ -6,7 +6,12 @@ import csv
 import io
 from datetime import datetime
 import os
-from .data_api import DataAPI
+
+# Handle both relative and absolute imports
+try:
+    from .data_api import DataAPI
+except ImportError:
+    from data_api import DataAPI
 
 
 app = Flask(__name__)

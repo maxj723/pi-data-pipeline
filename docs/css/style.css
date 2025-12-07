@@ -142,7 +142,8 @@ body {
     overflow-y: auto;
 }
 
-.data-item {
+.data-item,
+.live-data-item {
     padding: 15px;
     margin-bottom: 10px;
     background: rgba(37, 99, 235, 0.1);
@@ -162,15 +163,18 @@ body {
     }
 }
 
-.data-item-header {
+.data-item-header,
+.live-data-header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
     font-weight: bold;
 }
 
-.node-id {
+.node-id,
+.node-badge {
     color: var(--primary-color);
+    font-weight: bold;
 }
 
 .timestamp {

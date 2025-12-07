@@ -87,10 +87,10 @@ class DashboardApp {
         let endpoint;
 
         if (this.isCustomRange && this.customTimeRange.start && this.customTimeRange.end) {
-            // Use custom range
-            const start = new Date(this.customTimeRange.start).toISOString();
-            const end = new Date(this.customTimeRange.end).toISOString();
-            endpoint = `/timeseries?start=${start}&end=${end}`;
+            // Use custom range - format as local datetime string for backend
+            const start = this.customTimeRange.start + ':00'; // Add seconds
+            const end = this.customTimeRange.end + ':00';
+            endpoint = `/timeseries?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
         } else {
             // Use preset range
             const hours = document.getElementById('timeRange').value;
@@ -147,7 +147,10 @@ class DashboardApp {
         if (connected) {
             statusEl.innerHTML = '<span class="pulse connected"></span> Connected';
             statusEl.style.color = 'var(--success-color)';
-            lastUpdateEl.textContent = new Date().toLocaleTimeString();
+            lastUpdateEl.textContent = new Date().toLocaleTimeString(undefined, {
+                hour: 'numeric',
+                minute: '2-digit'
+            });
         } else {
             statusEl.innerHTML = '<span class="pulse disconnected"></span> Disconnected';
             statusEl.style.color = 'var(--danger-color)';
@@ -173,10 +176,9 @@ class DashboardApp {
         const item = document.createElement('div');
         item.className = 'live-data-item';
 
-        const time = new Date(data.timestamp).toLocaleString(undefined, {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
+        const time = new Date(data.timestamp).toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit'
         });
 
         item.innerHTML = `
@@ -233,7 +235,7 @@ class DashboardApp {
             const lastSeen = new Date(stat.last_seen).toLocaleString(undefined, {
                 month: 'short',
                 day: 'numeric',
-                hour: '2-digit',
+                hour: 'numeric',
                 minute: '2-digit'
             });
 
@@ -542,11 +544,12 @@ class DashboardApp {
         // Extract unique timestamps for labels
         const labels = [...new Set(timeSeriesData.map(d => {
             const date = new Date(d.timestamp);
-            return date.toLocaleTimeString(undefined, {
+            return date.toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                month: 'short',
-                day: 'numeric'
+                hour12: false
             });
         }))];
 
@@ -699,13 +702,15 @@ class DashboardApp {
         const params = new URLSearchParams();
 
         if (this.isCustomRange && this.customTimeRange.start && this.customTimeRange.end) {
-            const start = new Date(this.customTimeRange.start).toISOString();
-            const end = new Date(this.customTimeRange.end).toISOString();
+            // Use local datetime format
+            const start = this.customTimeRange.start + ':00';
+            const end = this.customTimeRange.end + ':00';
             params.append('start', start);
             params.append('end', end);
         } else {
             const hours = document.getElementById('timeRange').value;
             if (hours !== 'custom') {
+                // For preset ranges, use ISO format (already in UTC)
                 const end = new Date().toISOString();
                 const start = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
                 params.append('start', start);
