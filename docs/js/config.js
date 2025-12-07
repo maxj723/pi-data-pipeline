@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_BASE_URL: 'https://commit-speech-concord-drawing.trycloudflare.com', // cloudflare url for https tunneling
+    API_BASE_URL: 'https://mirror-nuke-lcd-ethical.trycloudflare.com', // cloudflare url for https tunneling
 
     REFRESH_INTERVALS: { // (ms)
         liveData: 5000,      // 5 seconds
