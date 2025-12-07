@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, text
-from data_packet import EnvironmentPacket, PowerPacket
+from data_packet import DataPacket
 
 class TimescaleStorage:
     def __init__(self, db_url: str):
@@ -7,7 +7,6 @@ class TimescaleStorage:
         self.engine = create_engine(db_url, pool_pre_ping=True)
 
     def init_db(self):
-        """Creates sensor_db table and hypertable if not exists."""
         with self.engine.begin() as conn:
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS sensor_db (
@@ -26,10 +25,8 @@ class TimescaleStorage:
         print("DB initialized.")
 
     def save(self, data):
-        """Insert or update record using UPSERT logic.
-        If a record with the same (node_id, timestamp) exists, merge the new data."""
         try:
-            if isinstance(data, EnvironmentPacket) or isinstance(data, PowerPacket):
+            if isinstance(data, DataPacket):
                 data = data.to_dict()
 
             # Get column names and create placeholders

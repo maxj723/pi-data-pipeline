@@ -1,10 +1,20 @@
 from typing import Optional
 
-class EnvironmentPacket:
-    def __init__(self, telemetry_data: dict, node_id: str, timestamp: str):
+class DataPacket:
+    def __init__(self, node_id: str, timestamp: str):
         self.node_id = node_id
         self.timestamp = timestamp
 
+    def to_dict(self) -> dict:
+        """Returns base dictionary with common fields"""
+        return {
+            "node_id": self.node_id,
+            "timestamp": self.timestamp,
+        }
+
+class EnvironmentPacket(DataPacket):
+    def __init__(self, telemetry_data: dict, node_id: str, timestamp: str):
+        super().__init__(node_id, timestamp)
         self.temperature: Optional[float] = telemetry_data.get("temperature")
         self.relative_humidity: Optional[float] = telemetry_data.get("relativeHumidity")
         self.soil_moisture: Optional[float] = telemetry_data.get("soilMoisture")
@@ -17,19 +27,17 @@ class EnvironmentPacket:
 
     def to_dict(self) -> dict:
         return {
-            "node_id":              self.node_id,
-            "timestamp":            self.timestamp,
-            "temperature":          self.temperature,
-            "relative_humidity":    self.relative_humidity,
-            "soil_moisture":        self.soil_moisture,
-            "lux":                  self.lux,
+            **super().to_dict(),
+            "temperature": self.temperature,
+            "relative_humidity": self.relative_humidity,
+            "soil_moisture": self.soil_moisture,
+            "lux": self.lux,
         }
 
-class PowerPacket:
-    def __init__(self, telemetry_data: dict, node_id: str, timestamp: str):
-        self.node_id = node_id
-        self.timestamp = timestamp
 
+class PowerPacket(DataPacket):
+    def __init__(self, telemetry_data: dict, node_id: str, timestamp: str):
+        super().__init__(node_id, timestamp)
         self.voltage: Optional[float] = telemetry_data.get("ch1Voltage")
 
     def __repr__(self):
@@ -38,7 +46,6 @@ class PowerPacket:
 
     def to_dict(self) -> dict:
         return {
-            "node_id":              self.node_id,
-            "timestamp":            self.timestamp,
-            "voltage":              self.voltage,
+            **super().to_dict(),
+            "voltage": self.voltage,
         }
