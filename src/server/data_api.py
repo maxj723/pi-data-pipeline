@@ -56,7 +56,6 @@ class DataAPI:
             return data
 
     def get_node_stats(self) -> list[dict[str, Any]]:
-        """Get statistics for all nodes (last 24 hours)"""
         with self.engine.connect() as conn:
             result = conn.execute(text("""
                 SELECT
@@ -89,7 +88,7 @@ class DataAPI:
 
             return stats
 
-    def get_timeseries_data(self, node_id: Optional[str] = None, hours: int = 12) -> list[dict[str, Any]]:
+    def get_timeseries_data(self, node_id: Optional[str] = None, hours: Optional[int] = None, start_time: Optional[str] = None, end_time: Optional[str] = None) -> list[dict[str, Any]]:
         base_query = """
             SELECT
                 time_bucket('5 minutes', timestamp) AS bucket,
@@ -102,11 +101,26 @@ class DataAPI:
                 MAX(temperature) as max_temp,
                 MIN(temperature) as min_temp
             FROM sensor_db
-            WHERE timestamp >= NOW() - INTERVAL ':hours hours'
+            WHERE 1=1
         """
+
+        params = {}
+
+        # Handle time range
+        if start_time and end_time:
+            base_query += " AND timestamp >= :start_time AND timestamp <= :end_time"
+            params["start_time"] = start_time
+            params["end_time"] = end_time
+        elif hours:
+            base_query += " AND timestamp >= NOW() - INTERVAL ':hours hours'"
+            params["hours"] = hours
+        else:
+            # Default to 12 hours if nothing specified
+            base_query += " AND timestamp >= NOW() - INTERVAL '12 hours'"
 
         if node_id:
             base_query += " AND node_id = :node_id"
+            params["node_id"] = node_id
 
         base_query += """
             GROUP BY bucket, node_id
@@ -114,10 +128,6 @@ class DataAPI:
         """
 
         with self.engine.connect() as conn:
-            params = {"hours": hours}
-            if node_id:
-                params["node_id"] = node_id
-
             result = conn.execute(text(base_query), params)
 
             data = []
@@ -150,3 +160,50 @@ class DataAPI:
                 node.update(node_data_map[node["node_id"]])
 
         return nodes
+
+    def get_export_data(self, start_time: Optional[str] = None, end_time: Optional[str] = None, node_id: Optional[str] = None) -> list[dict[str, Any]]:
+        query = """
+            SELECT
+                node_id,
+                timestamp,
+                temperature,
+                relative_humidity,
+                soil_moisture,
+                lux,
+                voltage
+            FROM sensor_db
+            WHERE 1=1
+        """
+
+        params = {}
+
+        if start_time:
+            query += " AND timestamp >= :start_time"
+            params["start_time"] = start_time
+
+        if end_time:
+            query += " AND timestamp <= :end_time"
+            params["end_time"] = end_time
+
+        if node_id:
+            query += " AND node_id = :node_id"
+            params["node_id"] = node_id
+
+        query += " ORDER BY timestamp ASC"
+
+        with self.engine.connect() as conn:
+            result = conn.execute(text(query), params)
+
+            data = []
+            for row in result:
+                data.append({
+                    "node_id": row[0],
+                    "timestamp": row[1].isoformat() if row[1] else None,
+                    "temperature": float(row[2]) if row[2] is not None else None,
+                    "relative_humidity": float(row[3]) if row[3] is not None else None,
+                    "soil_moisture": float(row[4]) if row[4] is not None else None,
+                    "lux": float(row[5]) if row[5] is not None else None,
+                    "voltage": float(row[6]) if row[6] is not None else None
+                })
+
+            return data

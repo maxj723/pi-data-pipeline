@@ -2,17 +2,16 @@ from flask import Flask, jsonify, Response, request
 from flask_cors import CORS
 import json
 import time
+import csv
+import io
 from datetime import datetime
 import os
-
 from .data_api import DataAPI
 
 
-# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Initialize DataAPI with database URL
 DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 api = DataAPI(DB_URL)
 
@@ -49,10 +48,18 @@ def get_node_locations():
 
 @app.route('/api/timeseries', methods=['GET'])
 def get_timeseries():
-    """Get time-series data for charts"""
+    """Get time-series data for charts with optional custom date range"""
     node_id = request.args.get('node_id', None)
-    hours = request.args.get('hours', 12, type=int)
-    data = api.get_timeseries_data(node_id=node_id, hours=hours)
+    hours = request.args.get('hours', None, type=int)
+    start_time = request.args.get('start', None)
+    end_time = request.args.get('end', None)
+
+    data = api.get_timeseries_data(
+        node_id=node_id,
+        hours=hours,
+        start_time=start_time,
+        end_time=end_time
+    )
     return jsonify(data)
 
 # Temporary -- will replace with decision model class
@@ -95,6 +102,39 @@ def get_decisions():
         })
 
     return jsonify(decisions)
+
+@app.route('/api/export/csv', methods=['GET'])
+def export_csv():
+    """Export sensor data as CSV file with optional date range filtering"""
+    start_time = request.args.get('start', None)
+    end_time = request.args.get('end', None)
+    node_id = request.args.get('node_id', None)
+
+    # Get data from API
+    data = api.get_export_data(start_time=start_time, end_time=end_time, node_id=node_id)
+
+    if not data:
+        return jsonify({"error": "No data found for the specified range"}), 404
+
+    # Create CSV in memory
+    output = io.StringIO()
+    fieldnames = ['node_id', 'timestamp', 'temperature', 'relative_humidity', 'soil_moisture', 'lux', 'voltage']
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+
+    writer.writeheader()
+    for row in data:
+        writer.writerow(row)
+
+    # Prepare response
+    csv_data = output.getvalue()
+    output.close()
+
+    # Generate filename with timestamp
+    filename = f"sensor_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
 
 @app.route('/api/stream')
 def stream():

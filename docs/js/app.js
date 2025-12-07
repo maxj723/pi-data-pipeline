@@ -7,6 +7,8 @@ class DashboardApp {
         this.markers = [];
         this.eventSource = null;
         this.isConnected = false;
+        this.customTimeRange = { start: null, end: null };
+        this.isCustomRange = false;
 
         this.init();
     }
@@ -82,8 +84,21 @@ class DashboardApp {
     }
 
     async fetchTimeSeriesData() {
-        const hours = document.getElementById('timeRange').value;
-        const data = await this.fetchAPI(`/timeseries?hours=${hours}`);
+        let endpoint;
+
+        if (this.isCustomRange && this.customTimeRange.start && this.customTimeRange.end) {
+            // Use custom range
+            const start = new Date(this.customTimeRange.start).toISOString();
+            const end = new Date(this.customTimeRange.end).toISOString();
+            endpoint = `/timeseries?start=${start}&end=${end}`;
+        } else {
+            // Use preset range
+            const hours = document.getElementById('timeRange').value;
+            if (hours === 'custom') return; // Don't fetch if custom is selected but not applied
+            endpoint = `/timeseries?hours=${hours}`;
+        }
+
+        const data = await this.fetchAPI(endpoint);
         if (data) this.updateCharts(data);
     }
 
@@ -98,51 +113,45 @@ class DashboardApp {
             this.eventSource = new EventSource(`${CONFIG.API_BASE_URL}/api/stream`);
 
             this.eventSource.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                console.log('SSE Update:', data);
-                this.handleRealtimeUpdate(data);
-                this.updateConnectionStatus(true);
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('SSE Update:', data);
+
+                    // Refresh charts when new data arrives
+                    this.fetchTimeSeriesData();
+
+                    this.updateConnectionStatus(true);
+                } catch (e) {
+                    console.log('SSE keepalive');
+                }
             };
 
-            this.eventSource.onerror = (error) => {
-                console.error('SSE Error:', error);
+            this.eventSource.onerror = () => {
+                console.warn('SSE connection error, will retry...');
                 this.updateConnectionStatus(false);
             };
+
+            console.log('SSE initialized');
         } catch (error) {
             console.error('Failed to initialize SSE:', error);
         }
-    }
-
-    handleRealtimeUpdate(data) {
-        // Add to live feed
-        this.addToLiveDataFeed(data);
-
-        // Update last update time
-        this.updateLastUpdateTime();
-
-        // Optionally refresh other components
-        this.fetchNodeStats();
-        this.fetchDecisions();
     }
 
     // ==================== UI Updates ====================
 
     updateConnectionStatus(connected) {
         this.isConnected = connected;
-        const statusElement = document.getElementById('connectionStatus');
+        const statusEl = document.getElementById('connectionStatus');
+        const lastUpdateEl = document.getElementById('lastUpdate');
 
         if (connected) {
-            statusElement.textContent = '🟢 Connected';
-            statusElement.classList.remove('disconnected');
+            statusEl.innerHTML = '<span class="pulse connected"></span> Connected';
+            statusEl.style.color = 'var(--success-color)';
+            lastUpdateEl.textContent = new Date().toLocaleTimeString();
         } else {
-            statusElement.textContent = '🔴 Disconnected';
-            statusElement.classList.add('disconnected');
+            statusEl.innerHTML = '<span class="pulse disconnected"></span> Disconnected';
+            statusEl.style.color = 'var(--danger-color)';
         }
-    }
-
-    updateLastUpdateTime() {
-        const now = new Date();
-        document.getElementById('lastUpdate').textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     }
 
     updateLiveDataFeed(dataArray) {
@@ -155,47 +164,25 @@ class DashboardApp {
 
         container.innerHTML = '';
 
-        dataArray.forEach(data => {
-            container.appendChild(this.createDataItem(data));
+        dataArray.slice(0, 10).forEach(data => {
+            container.appendChild(this.createLiveDataItem(data));
         });
-
-        this.updateLastUpdateTime();
     }
 
-    addToLiveDataFeed(data) {
-        const container = document.getElementById('liveDataContainer');
-
-        // Remove loading message if present
-        const loading = container.querySelector('.loading');
-        if (loading) loading.remove();
-
-        // Create new data item
-        const dataItem = this.createDataItem(data);
-
-        // Add to top
-        container.insertBefore(dataItem, container.firstChild);
-
-        // Keep only latest 10 items
-        while (container.children.length > 10) {
-            container.removeChild(container.lastChild);
-        }
-    }
-
-    createDataItem(data) {
+    createLiveDataItem(data) {
         const item = document.createElement('div');
-        item.className = 'data-item';
+        item.className = 'live-data-item';
 
-        const timestamp = new Date(data.timestamp).toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
+        const time = new Date(data.timestamp).toLocaleString(undefined, {
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            second: '2-digit'
         });
 
         item.innerHTML = `
-            <div class="data-item-header">
-                <span class="node-id">${data.node_id}</span>
-                <span class="timestamp">${timestamp}</span>
+            <div class="live-data-header">
+                <span class="node-badge">${data.node_id}</span>
+                <span class="timestamp">${time}</span>
             </div>
             <div class="sensor-readings">
                 <div class="sensor-value">
@@ -301,30 +288,20 @@ class DashboardApp {
 
             card.className = cardClass;
 
-            const timestamp = new Date(decision.timestamp).toLocaleString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
             card.innerHTML = `
                 <div class="decision-header">
                     <span class="decision-node">${decision.node_id}</span>
-                    <span class="decision-confidence">${(decision.confidence * 100).toFixed(0)}%</span>
+                    <span class="decision-confidence">${(decision.confidence * 100).toFixed(0)}% confident</span>
                 </div>
                 <div class="decision-text">${decision.decision}</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
-                    ${timestamp}
-                </div>
-                <span class="decision-action">Action: ${decision.action.replace('_', ' ')}</span>
+                ${decision.action !== 'none' ? `<div class="decision-action">Action: ${decision.action.replace(/_/g, ' ')}</div>` : ''}
             `;
 
             container.appendChild(card);
         });
     }
 
-    // ==================== Map ====================
+    // ==================== Map Functions ====================
 
     initMap() {
         this.map = L.map('map').setView(CONFIG.MAP.defaultCenter, CONFIG.MAP.defaultZoom);
@@ -337,9 +314,11 @@ class DashboardApp {
         console.log('Map initialized');
     }
 
-    updateMap(nodesData) {
+    updateMap(locations) {
+        if (!locations || locations.length === 0) return;
+
         // Clear existing markers
-        this.markers.forEach(marker => this.map.removeLayer(marker));
+        this.markers.forEach(marker => marker.remove());
         this.markers = [];
 
         // Clear existing heat layer
@@ -347,73 +326,64 @@ class DashboardApp {
             this.map.removeLayer(this.heatLayer);
         }
 
-        if (!nodesData || nodesData.length === 0) return;
+        const heatMetric = document.getElementById('heatmapMetric').value;
+        const heatPoints = [];
 
-        // Add markers for each node
-        const heatData = [];
+        locations.forEach(location => {
+            if (!location.lat || !location.lon) return;
 
-        nodesData.forEach(node => {
-            const marker = L.marker([node.lat, node.lon]).addTo(this.map);
+            // Create marker
+            const marker = L.marker([location.lat, location.lon]).addTo(this.map);
 
             const popupContent = `
-                <strong>${node.name || node.node_id}</strong><br>
-                Temp: ${this.formatValue(node.avg_temp, '°C')}<br>
-                Humidity: ${this.formatValue(node.avg_humidity, '%')}<br>
-                Soil: ${this.formatValue(node.avg_soil_moisture, '')}<br>
-                Light: ${this.formatValue(node.avg_lux, ' lux')}<br>
-                Voltage: ${this.formatValue(node.avg_voltage, 'V')}
+                <b>${location.name || location.node_id}</b><br>
+                Temp: ${this.formatValue(location.avg_temp, '°C')}<br>
+                Humidity: ${this.formatValue(location.avg_humidity, '%')}<br>
+                Soil: ${this.formatValue(location.avg_soil_moisture, '')}<br>
+                Light: ${this.formatValue(location.avg_lux, ' lux')}<br>
+                Voltage: ${this.formatValue(location.avg_voltage, 'V')}
             `;
 
             marker.bindPopup(popupContent);
             this.markers.push(marker);
 
             // Add to heat map data
-            const metric = document.getElementById('heatmapMetric').value;
-            let intensity = 0;
-
-            switch(metric) {
-                case 'temperature':
-                    intensity = node.avg_temp || 0;
-                    break;
-                case 'humidity':
-                    intensity = node.avg_humidity || 0;
-                    break;
-                case 'soil_moisture':
-                    intensity = node.avg_soil_moisture || 0;
-                    break;
-                case 'lux':
-                    intensity = node.avg_lux || 0;
-                    break;
+            const metricValue = location[`avg_${heatMetric}`];
+            if (metricValue !== null && metricValue !== undefined) {
+                heatPoints.push([location.lat, location.lon, metricValue]);
             }
-
-            heatData.push([node.lat, node.lon, intensity / 100]);
         });
 
-        // Add heat layer
-        if (CONFIG.FEATURES.heatMap && heatData.length > 0) {
-            this.heatLayer = L.heatLayer(heatData, {
+        // Add heat layer if enabled
+        if (CONFIG.FEATURES.heatMap && heatPoints.length > 0) {
+            this.heatLayer = L.heatLayer(heatPoints, {
                 radius: 25,
-                blur: 15,
+                blur: 35,
                 maxZoom: 17,
             }).addTo(this.map);
         }
-
-        // Fit map to markers
-        if (this.markers.length > 0) {
-            const group = L.featureGroup(this.markers);
-            this.map.fitBounds(group.getBounds().pad(0.1));
-        }
     }
 
-    // ==================== Charts ====================
+    // ==================== Chart Functions ====================
 
     initCharts() {
         const chartOptions = {
             responsive: true,
             maintainAspectRatio: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: {
                     labels: { color: '#e2e8f0' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    titleColor: '#e2e8f0',
+                    bodyColor: '#e2e8f0',
+                    borderColor: '#475569',
+                    borderWidth: 1
                 }
             },
             scales: {
@@ -428,33 +398,125 @@ class DashboardApp {
             }
         };
 
-        // Temperature & Humidity Chart
-        this.charts.tempHumidity = new Chart(
-            document.getElementById('tempHumidityChart'),
+        // Soil Moisture Chart
+        this.charts.soilMoisture = new Chart(
+            document.getElementById('soilMoistureChart'),
             {
                 type: 'line',
                 data: { labels: [], datasets: [] },
-                options: chartOptions
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Moisture',
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
             }
         );
 
-        // Soil & Sunlight Chart
-        this.charts.soilSun = new Chart(
-            document.getElementById('soilSunChart'),
+        // Temperature Chart
+        this.charts.temperature = new Chart(
+            document.getElementById('temperatureChart'),
             {
                 type: 'line',
                 data: { labels: [], datasets: [] },
-                options: chartOptions
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)',
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
             }
         );
 
-        // Battery Chart
-        this.charts.battery = new Chart(
-            document.getElementById('batteryChart'),
+        // Humidity Chart
+        this.charts.humidity = new Chart(
+            document.getElementById('humidityChart'),
             {
                 type: 'line',
                 data: { labels: [], datasets: [] },
-                options: chartOptions
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Humidity (%)',
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+        // Lux Chart
+        this.charts.lux = new Chart(
+            document.getElementById('luxChart'),
+            {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            min: 0,
+                            title: {
+                                display: true,
+                                text: 'Light (lux)',
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+        // Voltage Chart
+        this.charts.voltage = new Chart(
+            document.getElementById('voltageChart'),
+            {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            min: 3.0,
+                            max: 4.2,
+                            title: {
+                                display: true,
+                                text: 'Voltage (V)',
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
             }
         );
 
@@ -462,7 +524,10 @@ class DashboardApp {
     }
 
     updateCharts(timeSeriesData) {
-        if (!timeSeriesData || timeSeriesData.length === 0) return;
+        if (!timeSeriesData || timeSeriesData.length === 0) {
+            console.warn('No time series data available');
+            return;
+        }
 
         // Group data by node
         const nodeData = {};
@@ -474,77 +539,97 @@ class DashboardApp {
             nodeData[point.node_id].push(point);
         });
 
-        const labels = timeSeriesData
-            .map(d => new Date(d.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }))
-            .filter((v, i, a) => a.indexOf(v) === i);
+        // Extract unique timestamps for labels
+        const labels = [...new Set(timeSeriesData.map(d => {
+            const date = new Date(d.timestamp);
+            return date.toLocaleTimeString(undefined, {
+                hour: '2-digit',
+                minute: '2-digit',
+                month: 'short',
+                day: 'numeric'
+            });
+        }))];
 
-        // Update Temperature & Humidity Chart
-        const tempHumidityDatasets = [];
+        // Generate a color for each node
+        const nodeColors = {};
+        const colorPalette = [
+            'rgba(239, 68, 68, 1)',   // Red
+            'rgba(59, 130, 246, 1)',  // Blue
+            'rgba(16, 185, 129, 1)',  // Green
+            'rgba(245, 158, 11, 1)',  // Orange
+            'rgba(124, 58, 237, 1)'   // Purple
+        ];
+
         Object.keys(nodeData).forEach((nodeId, index) => {
-            const colors = Object.values(CONFIG.CHART_COLORS);
-            const color = colors[index % colors.length];
-
-            tempHumidityDatasets.push({
-                label: `${nodeId} - Temp`,
-                data: nodeData[nodeId].map(d => d.avg_temp),
-                borderColor: color,
-                backgroundColor: color.replace('1)', '0.1)'),
-                tension: 0.4
-            });
-
-            tempHumidityDatasets.push({
-                label: `${nodeId} - Humidity`,
-                data: nodeData[nodeId].map(d => d.avg_humidity),
-                borderColor: CONFIG.CHART_COLORS.humidity,
-                backgroundColor: CONFIG.CHART_COLORS_ALPHA.humidity,
-                tension: 0.4
-            });
+            nodeColors[nodeId] = colorPalette[index % colorPalette.length];
         });
 
-        this.charts.tempHumidity.data.labels = labels;
-        this.charts.tempHumidity.data.datasets = tempHumidityDatasets;
-        this.charts.tempHumidity.update();
+        // Update Soil Moisture Chart
+        const soilDatasets = Object.keys(nodeData).map(nodeId => ({
+            label: nodeId,
+            data: nodeData[nodeId].map(d => d.avg_soil_moisture),
+            borderColor: nodeColors[nodeId],
+            backgroundColor: nodeColors[nodeId].replace('1)', '0.1)'),
+            tension: 0.4,
+            fill: true
+        }));
+        this.charts.soilMoisture.data.labels = labels;
+        this.charts.soilMoisture.data.datasets = soilDatasets;
+        this.charts.soilMoisture.update('none'); // 'none' for no animation on update
 
-        // Update Soil & Light Chart
-        const soilSunDatasets = [];
-        Object.keys(nodeData).forEach(nodeId => {
-            soilSunDatasets.push({
-                label: `${nodeId} - Soil Moisture`,
-                data: nodeData[nodeId].map(d => d.avg_soil_moisture),
-                borderColor: CONFIG.CHART_COLORS.soil_moisture,
-                backgroundColor: CONFIG.CHART_COLORS_ALPHA.soil_moisture,
-                tension: 0.4
-            });
+        // Update Temperature Chart
+        const tempDatasets = Object.keys(nodeData).map(nodeId => ({
+            label: nodeId,
+            data: nodeData[nodeId].map(d => d.avg_temp),
+            borderColor: nodeColors[nodeId],
+            backgroundColor: nodeColors[nodeId].replace('1)', '0.1)'),
+            tension: 0.4,
+            fill: true
+        }));
+        this.charts.temperature.data.labels = labels;
+        this.charts.temperature.data.datasets = tempDatasets;
+        this.charts.temperature.update('none');
 
-            soilSunDatasets.push({
-                label: `${nodeId} - Light`,
-                data: nodeData[nodeId].map(d => d.avg_lux),
-                borderColor: CONFIG.CHART_COLORS.lux,
-                backgroundColor: CONFIG.CHART_COLORS_ALPHA.lux,
-                tension: 0.4
-            });
-        });
+        // Update Humidity Chart
+        const humidityDatasets = Object.keys(nodeData).map(nodeId => ({
+            label: nodeId,
+            data: nodeData[nodeId].map(d => d.avg_humidity),
+            borderColor: nodeColors[nodeId],
+            backgroundColor: nodeColors[nodeId].replace('1)', '0.1)'),
+            tension: 0.4,
+            fill: true
+        }));
+        this.charts.humidity.data.labels = labels;
+        this.charts.humidity.data.datasets = humidityDatasets;
+        this.charts.humidity.update('none');
 
-        this.charts.soilSun.data.labels = labels;
-        this.charts.soilSun.data.datasets = soilSunDatasets;
-        this.charts.soilSun.update();
+        // Update Lux Chart
+        const luxDatasets = Object.keys(nodeData).map(nodeId => ({
+            label: nodeId,
+            data: nodeData[nodeId].map(d => d.avg_lux),
+            borderColor: nodeColors[nodeId],
+            backgroundColor: nodeColors[nodeId].replace('1)', '0.1)'),
+            tension: 0.4,
+            fill: true
+        }));
+        this.charts.lux.data.labels = labels;
+        this.charts.lux.data.datasets = luxDatasets;
+        this.charts.lux.update('none');
 
         // Update Voltage Chart
-        const voltageDatasets = [];
-        Object.keys(nodeData).forEach(nodeId => {
-            voltageDatasets.push({
-                label: `${nodeId} - Voltage`,
-                data: nodeData[nodeId].map(d => d.avg_voltage),
-                borderColor: CONFIG.CHART_COLORS.voltage,
-                backgroundColor: CONFIG.CHART_COLORS_ALPHA.voltage,
-                tension: 0.4,
-                fill: true
-            });
-        });
+        const voltageDatasets = Object.keys(nodeData).map(nodeId => ({
+            label: nodeId,
+            data: nodeData[nodeId].map(d => d.avg_voltage),
+            borderColor: nodeColors[nodeId],
+            backgroundColor: nodeColors[nodeId].replace('1)', '0.1)'),
+            tension: 0.4,
+            fill: true
+        }));
+        this.charts.voltage.data.labels = labels;
+        this.charts.voltage.data.datasets = voltageDatasets;
+        this.charts.voltage.update('none');
 
-        this.charts.battery.data.labels = labels;
-        this.charts.battery.data.datasets = voltageDatasets;
-        this.charts.battery.update();
+        console.log('Charts updated with', timeSeriesData.length, 'data points');
     }
 
     // ==================== Auto Refresh ====================
@@ -563,18 +648,107 @@ class DashboardApp {
 
     setupEventListeners() {
         // Time range selector
-        document.getElementById('timeRange').addEventListener('change', () => {
+        document.getElementById('timeRange').addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                document.getElementById('customRangeControls').style.display = 'flex';
+                this.isCustomRange = true;
+            } else {
+                document.getElementById('customRangeControls').style.display = 'none';
+                this.isCustomRange = false;
+                this.fetchTimeSeriesData();
+            }
+        });
+
+        // Apply custom range
+        document.getElementById('applyCustomRange').addEventListener('click', () => {
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
+
+            if (!start || !end) {
+                alert('Please select both start and end times');
+                return;
+            }
+
+            if (new Date(start) >= new Date(end)) {
+                alert('Start time must be before end time');
+                return;
+            }
+
+            this.customTimeRange = { start, end };
+            this.isCustomRange = true;
             this.fetchTimeSeriesData();
+        });
+
+        // CSV download button
+        document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+            this.downloadCSV();
         });
 
         // Heat map metric selector
         document.getElementById('heatmapMetric').addEventListener('change', () => {
             this.fetchNodeLocations();
         });
+
+        console.log('Event listeners setup complete');
+    }
+
+    // ==================== CSV Download ====================
+
+    async downloadCSV() {
+        let url = `${CONFIG.API_BASE_URL}/api/export/csv`;
+        const params = new URLSearchParams();
+
+        if (this.isCustomRange && this.customTimeRange.start && this.customTimeRange.end) {
+            const start = new Date(this.customTimeRange.start).toISOString();
+            const end = new Date(this.customTimeRange.end).toISOString();
+            params.append('start', start);
+            params.append('end', end);
+        } else {
+            const hours = document.getElementById('timeRange').value;
+            if (hours !== 'custom') {
+                const end = new Date().toISOString();
+                const start = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+                params.append('start', start);
+                params.append('end', end);
+            }
+        }
+
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        try {
+            // Fetch the CSV
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error('Failed to download CSV');
+            }
+
+            // Get the blob
+            const blob = await response.blob();
+
+            // Create download link
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `sensor_data_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+
+            // Cleanup
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            console.log('CSV downloaded successfully');
+        } catch (error) {
+            console.error('Failed to download CSV:', error);
+            alert('Failed to download CSV. Please try again.');
+        }
     }
 }
 
-// Initialize the app when DOM is ready
+// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.dashboardApp = new DashboardApp();
+    window.app = new DashboardApp();
 });

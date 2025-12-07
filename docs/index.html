@@ -79,28 +79,53 @@
             <section class="card charts-section">
                 <h2>Historical Data</h2>
                 <div class="chart-controls">
-                    <label>
-                        Time Range:
-                        <select id="timeRange">
-                            <option value="1">Last Hour</option>
-                            <option value="6">Last 6 Hours</option>
-                            <option value="12" selected>Last 12 Hours</option>
-                            <option value="24">Last 24 Hours</option>
-                        </select>
-                    </label>
+                    <div class="controls-row">
+                        <label>
+                            Quick Range:
+                            <select id="timeRange">
+                                <option value="1">Last Hour</option>
+                                <option value="6">Last 6 Hours</option>
+                                <option value="12" selected>Last 12 Hours</option>
+                                <option value="24">Last 24 Hours</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </label>
+                        <button id="downloadCsvBtn" class="download-btn">
+                            📥 Download CSV
+                        </button>
+                    </div>
+                    <div id="customRangeControls" class="custom-range-controls" style="display: none;">
+                        <label>
+                            Start:
+                            <input type="datetime-local" id="startTime" />
+                        </label>
+                        <label>
+                            End:
+                            <input type="datetime-local" id="endTime" />
+                        </label>
+                        <button id="applyCustomRange" class="apply-btn">Apply</button>
+                    </div>
                 </div>
                 <div class="charts-grid">
                     <div class="chart-wrapper">
-                        <h3>Temperature & Humidity</h3>
-                        <canvas id="tempHumidityChart"></canvas>
+                        <h3>Soil Moisture</h3>
+                        <canvas id="soilMoistureChart"></canvas>
                     </div>
                     <div class="chart-wrapper">
-                        <h3>Soil Moisture & Light</h3>
-                        <canvas id="soilSunChart"></canvas>
+                        <h3>Temperature (°C)</h3>
+                        <canvas id="temperatureChart"></canvas>
                     </div>
                     <div class="chart-wrapper">
-                        <h3>Voltage Levels</h3>
-                        <canvas id="batteryChart"></canvas>
+                        <h3>Relative Humidity (%)</h3>
+                        <canvas id="humidityChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Light Intensity (lux)</h3>
+                        <canvas id="luxChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Voltage (V)</h3>
+                        <canvas id="voltageChart"></canvas>
                     </div>
                 </div>
             </section>
