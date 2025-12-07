@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-
 import os
 import time
-from listener import MeshtasticListener
-from storage import TimescaleStorage
+from .listener import MeshtasticListener
+from .storage import TimescaleStorage
+
 
 DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 

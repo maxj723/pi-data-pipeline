@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, text
-from data_packet import DataPacket
+from .data_packet import DataPacket
+
 
 class TimescaleStorage:
     def __init__(self, db_url: str):

@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 class DataPacket:
     def __init__(self, node_id: str, timestamp: str):
         self.node_id = node_id
@@ -11,6 +12,7 @@ class DataPacket:
             "node_id": self.node_id,
             "timestamp": self.timestamp,
         }
+
 
 class EnvironmentPacket(DataPacket):
     def __init__(self, telemetry_data: dict, node_id: str, timestamp: str):

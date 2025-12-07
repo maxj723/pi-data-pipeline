@@ -4,7 +4,7 @@ from pubsub import pub
 import time
 from queue import Queue
 from typing import Optional, Any
-from data_packet import DataPacket, EnvironmentPacket, PowerPacket
+from .data_packet import DataPacket, EnvironmentPacket, PowerPacket
 
 
 class MeshtasticListener:
