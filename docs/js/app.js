@@ -153,14 +153,16 @@ class DashboardApp {
         const lastUpdateEl = document.getElementById('lastUpdate');
 
         if (connected) {
-            statusEl.innerHTML = '<span class="pulse connected"></span> Connected';
+            statusEl.classList.remove('disconnected');
+            statusEl.innerHTML = '<span class="pulse"></span> Connected';
             statusEl.style.color = 'var(--success-color)';
             lastUpdateEl.textContent = new Date().toLocaleTimeString(undefined, {
                 hour: 'numeric',
                 minute: '2-digit'
             });
         } else {
-            statusEl.innerHTML = '<span class="pulse disconnected"></span> Disconnected';
+            statusEl.classList.add('disconnected');
+            statusEl.innerHTML = '<span class="pulse"></span> Disconnected';
             statusEl.style.color = 'var(--danger-color)';
         }
     }
