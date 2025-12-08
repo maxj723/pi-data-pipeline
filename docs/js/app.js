@@ -423,7 +423,7 @@ class DashboardApp {
                         y: {
                             ...chartOptions.scales.y,
                             min: 0,
-                            max: 100,
+                            max: 60,
                             title: {
                                 display: true,
                                 text: 'Moisture',
