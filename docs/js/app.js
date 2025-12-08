@@ -176,7 +176,9 @@ class DashboardApp {
         const item = document.createElement('div');
         item.className = 'live-data-item';
 
-        const time = new Date(data.timestamp).toLocaleTimeString(undefined, {
+        const time = new Date(data.timestamp).toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
             hour: 'numeric',
             minute: '2-digit'
         });
@@ -547,7 +549,7 @@ class DashboardApp {
             return date.toLocaleString(undefined, {
                 month: 'short',
                 day: 'numeric',
-                hour: '2-digit',
+                hour: 'numeric',
                 minute: '2-digit',
                 hour12: false
             });
