@@ -9,6 +9,7 @@ class DashboardApp {
         this.isConnected = false;
         this.customTimeRange = { start: null, end: null };
         this.isCustomRange = false;
+        this.lastLiveDataTimestamp = null;
 
         this.init();
     }
@@ -65,7 +66,14 @@ class DashboardApp {
 
     async fetchLiveData() {
         const data = await this.fetchAPI('/latest?limit=10');
-        if (data) this.updateLiveDataFeed(data);
+        if (data && data.length > 0) {
+            if (this.lastLiveDataTimestamp === null || data[0].timestamp !== this.lastLiveDataTimestamp) {
+                this.lastLiveDataTimestamp = data[0].timestamp;
+                this.updateLiveDataFeed(data);
+            }
+        } else if (data) { // data is an empty array
+            this.updateLiveDataFeed(data);
+        }
     }
 
     async fetchNodeStats() {

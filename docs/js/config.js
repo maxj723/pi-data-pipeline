@@ -26,7 +26,7 @@ const CONFIG = {
     },
 
     MAP: {
-        defaultCenter: [41.7052, -86.2352],
+        defaultCenter: [41.6988, -86.2360],
         defaultZoom: 15,
         tileLayer: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
