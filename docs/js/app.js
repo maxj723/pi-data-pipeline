@@ -551,15 +551,14 @@ class DashboardApp {
                 day: 'numeric',
                 hour: 'numeric',
                 minute: '2-digit',
-                hour12: false
             });
         }))];
 
         // Generate a color for each node
         const nodeColors = {};
         const colorPalette = [
-            'rgba(239, 68, 68, 1)',   // Red
             'rgba(59, 130, 246, 1)',  // Blue
+            'rgba(239, 68, 68, 1)',   // Red
             'rgba(16, 185, 129, 1)',  // Green
             'rgba(245, 158, 11, 1)',  // Orange
             'rgba(124, 58, 237, 1)'   // Purple
