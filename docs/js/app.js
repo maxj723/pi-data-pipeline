@@ -424,8 +424,6 @@ class DashboardApp {
                         ...chartOptions.scales,
                         y: {
                             ...chartOptions.scales.y,
-                            min: 0,
-                            max: 60,
                             title: {
                                 display: true,
                                 text: 'Moisture',
@@ -521,8 +519,6 @@ class DashboardApp {
                         ...chartOptions.scales,
                         y: {
                             ...chartOptions.scales.y,
-                            min: 3.0,
-                            max: 4.2,
                             title: {
                                 display: true,
                                 text: 'Voltage (V)',
