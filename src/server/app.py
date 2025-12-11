@@ -13,12 +13,22 @@ try:
 except ImportError:
     from data_api import DataAPI
 
+try:
+    from ..models import ThresholdDecisionModel
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from models import ThresholdDecisionModel
+
 
 app = Flask(__name__)
 CORS(app)
 
 DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 api = DataAPI(DB_URL)
+
+decision_model = ThresholdDecisionModel()
 
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -67,46 +77,19 @@ def get_timeseries():
     )
     return jsonify(data)
 
-# Temporary -- will replace with decision model class
 @app.route('/api/decisions', methods=['GET'])
 def get_decisions():
-    """Get ML model decisions"""
-    latest = api.get_latest_data(limit=10)
+    """Get decision model analysis for sensor readings"""
+    limit = request.args.get('limit', 10, type=int)
+    latest = api.get_latest_data(limit=limit)
 
-    decisions = []
-    for reading in latest:
-        # Simple rule-based decisions as placeholder
-        decision_text = "Normal operation"
-        action = "none"
-        confidence = 0.95
+    # Use the threshold decision model to analyze readings
+    decisions = decision_model.analyze_batch(latest)
 
-        if reading.get("soil_moisture") and reading["soil_moisture"] < 30:
-            decision_text = "Low soil moisture detected"
-            action = "water_needed"
-            confidence = 0.88
-        elif reading.get("voltage") and reading["voltage"] < 3.0:
-            decision_text = "Low voltage warning"
-            action = "check_battery"
-            confidence = 1.0
-        elif reading.get("temperature") and reading["temperature"] > 35:
-            decision_text = "High temperature alert"
-            action = "monitor_temperature"
-            confidence = 0.92
+    # Convert Decision objects to dictionaries for JSON serialization
+    decisions_dict = [decision.to_dict() for decision in decisions]
 
-        decisions.append({
-            "node_id": reading["node_id"],
-            "decision": decision_text,
-            "confidence": confidence,
-            "timestamp": reading["timestamp"],
-            "action": action,
-            "metrics": {
-                "soil_moisture": reading.get("soil_moisture"),
-                "temperature": reading.get("temperature"),
-                "voltage": reading.get("voltage")
-            }
-        })
-
-    return jsonify(decisions)
+    return jsonify(decisions_dict)
 
 @app.route('/api/export/csv', methods=['GET'])
 def export_csv():
