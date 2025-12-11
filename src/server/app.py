@@ -13,25 +13,11 @@ try:
 except ImportError:
     from data_api import DataAPI
 
-try:
-    from ..models import ThresholdModel
-except ImportError:
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from models import ThresholdModel
-
-
 app = Flask(__name__)
 CORS(app)
 
 DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 api = DataAPI(DB_URL)
-
-decision_model = ThresholdModel()
-
-# Path to local decision storage file
-DECISIONS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'decisions.json')
 
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -84,23 +70,10 @@ def get_timeseries():
 def get_decisions():
     """Get decisions from local storage file"""
     try:
-        if not os.path.exists(DECISIONS_FILE):
-            return jsonify([])
-
-        with open(DECISIONS_FILE, 'r') as f:
-            decisions = json.load(f)
-
-        # Return most recent decisions first
-        decisions.reverse()
-
-        # Apply limit if specified
         limit = request.args.get('limit', None, type=int)
-        if limit:
-            decisions = decisions[:limit]
-
+        decisions = api.get_decisions(limit=limit)
         return jsonify(decisions)
     except Exception as e:
-        print(f"Error reading decisions: {e}")
         return jsonify({"error": "Failed to read decisions"}), 500
 
 @app.route('/api/export/csv', methods=['GET'])
@@ -140,23 +113,9 @@ def export_csv():
 def clear_decisions():
     """Clear all decisions from local storage"""
     try:
-        # Ensure data directory exists
-        os.makedirs(os.path.dirname(DECISIONS_FILE), exist_ok=True)
-
-        # Count existing decisions
-        count = 0
-        if os.path.exists(DECISIONS_FILE):
-            with open(DECISIONS_FILE, 'r') as f:
-                decisions = json.load(f)
-                count = len(decisions)
-
-        # Clear the file
-        with open(DECISIONS_FILE, 'w') as f:
-            json.dump([], f)
-
+        count = api.clear_decisions()
         return jsonify({"message": f"Cleared {count} decisions", "count": count})
     except Exception as e:
-        print(f"Error clearing decisions: {e}")
         return jsonify({"error": "Failed to clear decisions"}), 500
 
 @app.route('/api/stream')

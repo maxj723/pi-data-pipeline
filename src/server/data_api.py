@@ -1,11 +1,21 @@
 from sqlalchemy import create_engine, text
 from typing import Optional, Any
+import json
+import os
+from datetime import datetime
+from pathlib import Path
 
 
 class DataAPI:
-    def __init__(self, db_url: str):
+    def __init__(self, db_url: str, decisions_file: Optional[str] = None):
         self.db_url = db_url
         self.engine = create_engine(db_url, pool_pre_ping=True)
+
+        if decisions_file:
+            self.decisions_file = decisions_file
+        else:
+            project_root = Path(__file__).parent.parent.parent
+            self.decisions_file = str(project_root / 'data' / 'decisions.json')
 
     def get_latest_data(self, limit: int = 50) -> list[dict[str, Any]]:
         with self.engine.connect() as conn:
@@ -207,3 +217,73 @@ class DataAPI:
                 })
 
             return data
+
+    # ==================== Decision Management ====================
+
+    def get_decisions(self, limit: Optional[int] = None) -> list[dict[str, Any]]:
+        """
+        Get decisions from local storage file.
+
+        Args:
+            limit: Optional limit on number of decisions to return.
+
+        Returns:
+            List of decision dictionaries.
+        """
+        try:
+            if not os.path.exists(self.decisions_file):
+                return []
+
+            with open(self.decisions_file, 'r') as f:
+                content = f.read()
+                data = json.loads(content)
+
+            # Handle both dict (new format) and list (legacy format)
+            if isinstance(data, dict):
+                decisions = list(data.values())
+            else:
+                decisions = data
+
+            # Sort by timestamp (most recent first)
+            decisions.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+
+            # Apply limit if specified
+            if limit:
+                decisions = decisions[:limit]
+
+            return decisions
+
+        except Exception as e:
+            print(f"[ERROR] Error reading decisions: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+
+    def clear_decisions(self) -> int:
+        """
+        Clear all decisions from local storage.
+
+        Returns:
+            Number of decisions cleared.
+        """
+        try:
+            # Ensure data directory exists
+            os.makedirs(os.path.dirname(self.decisions_file), exist_ok=True)
+
+            # Count existing decisions
+            count = 0
+            if os.path.exists(self.decisions_file):
+                with open(self.decisions_file, 'r') as f:
+                    data = json.load(f)
+                    # Handle both dict and list formats
+                    count = len(data) if data else 0
+
+            # Clear the file (use dict format)
+            with open(self.decisions_file, 'w') as f:
+                json.dump({}, f)
+
+            return count
+
+        except Exception as e:
+            print(f"[ERROR] Error clearing decisions: {e}")
+            raise

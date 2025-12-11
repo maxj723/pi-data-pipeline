@@ -46,11 +46,9 @@ def main():
                     reading_dict = telemetry_packet.to_dict()
                     decision = decision_model.analyze(reading_dict)
 
-                    # Save actionable decisions to local storage
-                    if decision.is_actionable():
-                        decision_dict = decision.to_dict()
-                        decision_storage.save_decision(decision_dict)
-                        print(f"  → Decision saved: {decision.decision_text}")
+                    # Save ALL decisions to local storage (maintains one per node)
+                    decision_dict = decision.to_dict()
+                    decision_storage.save_decision(decision_dict)
 
                 else:
                     time.sleep(0.1)
