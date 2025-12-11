@@ -30,6 +30,9 @@ api = DataAPI(DB_URL)
 
 decision_model = ThresholdDecisionModel()
 
+# Path to local decision storage file
+DECISIONS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'decisions.json')
+
 @app.route('/api/health', methods=['GET'])
 def health():
     """Health check endpoint"""
@@ -79,17 +82,26 @@ def get_timeseries():
 
 @app.route('/api/decisions', methods=['GET'])
 def get_decisions():
-    """Get decision model analysis for sensor readings"""
-    limit = request.args.get('limit', 10, type=int)
-    latest = api.get_latest_data(limit=limit)
+    """Get decisions from local storage file"""
+    try:
+        if not os.path.exists(DECISIONS_FILE):
+            return jsonify([])
 
-    # Use the threshold decision model to analyze readings
-    decisions = decision_model.analyze_batch(latest)
+        with open(DECISIONS_FILE, 'r') as f:
+            decisions = json.load(f)
 
-    # Convert Decision objects to dictionaries for JSON serialization
-    decisions_dict = [decision.to_dict() for decision in decisions]
+        # Return most recent decisions first
+        decisions.reverse()
 
-    return jsonify(decisions_dict)
+        # Apply limit if specified
+        limit = request.args.get('limit', None, type=int)
+        if limit:
+            decisions = decisions[:limit]
+
+        return jsonify(decisions)
+    except Exception as e:
+        print(f"Error reading decisions: {e}")
+        return jsonify({"error": "Failed to read decisions"}), 500
 
 @app.route('/api/export/csv', methods=['GET'])
 def export_csv():
@@ -123,6 +135,29 @@ def export_csv():
     response = Response(csv_data, mimetype='text/csv')
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
     return response
+
+@app.route('/api/decisions/clear', methods=['POST'])
+def clear_decisions():
+    """Clear all decisions from local storage"""
+    try:
+        # Ensure data directory exists
+        os.makedirs(os.path.dirname(DECISIONS_FILE), exist_ok=True)
+
+        # Count existing decisions
+        count = 0
+        if os.path.exists(DECISIONS_FILE):
+            with open(DECISIONS_FILE, 'r') as f:
+                decisions = json.load(f)
+                count = len(decisions)
+
+        # Clear the file
+        with open(DECISIONS_FILE, 'w') as f:
+            json.dump([], f)
+
+        return jsonify({"message": f"Cleared {count} decisions", "count": count})
+    except Exception as e:
+        print(f"Error clearing decisions: {e}")
+        return jsonify({"error": "Failed to clear decisions"}), 500
 
 @app.route('/api/stream')
 def stream():

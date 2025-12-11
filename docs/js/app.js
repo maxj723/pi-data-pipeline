@@ -302,6 +302,9 @@ class DashboardApp {
 
             card.className = cardClass;
 
+            // Format timestamp
+            const timestamp = decision.timestamp ? new Date(decision.timestamp).toLocaleString() : 'Unknown';
+
             card.innerHTML = `
                 <div class="decision-header">
                     <span class="decision-node">${decision.node_id}</span>
@@ -309,6 +312,13 @@ class DashboardApp {
                 </div>
                 <div class="decision-text">${decision.decision}</div>
                 ${decision.action !== 'none' ? `<div class="decision-action">Action: ${decision.action.replace(/_/g, ' ')}</div>` : ''}
+                <div class="decision-timestamp">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    ${timestamp}
+                </div>
             `;
 
             container.appendChild(card);
@@ -699,6 +709,11 @@ class DashboardApp {
             this.fetchNodeLocations();
         });
 
+        // Clear alerts button
+        document.getElementById('clearAlertsBtn').addEventListener('click', () => {
+            this.clearAlerts();
+        });
+
         console.log('Event listeners setup complete');
     }
 
@@ -756,6 +771,47 @@ class DashboardApp {
         } catch (error) {
             console.error('Failed to download CSV:', error);
             alert('Failed to download CSV. Please try again.');
+        }
+    }
+
+    // ==================== Clear Alerts ====================
+
+    async clearAlerts() {
+        if (!confirm('Are you sure you want to clear all alerts? This action cannot be undone.')) {
+            return;
+        }
+
+        const button = document.getElementById('clearAlertsBtn');
+        button.disabled = true;
+        button.textContent = 'Clearing...';
+
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/api/decisions/clear`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to clear alerts');
+            }
+
+            const result = await response.json();
+            console.log(`Cleared ${result.count} alerts`);
+
+            // Refresh the decisions display
+            await this.fetchDecisions();
+
+            // Show success message briefly
+            button.textContent = `Cleared ${result.count} alerts`;
+            setTimeout(() => {
+                button.textContent = 'Clear Alerts';
+                button.disabled = false;
+            }, 2000);
+
+        } catch (error) {
+            console.error('Failed to clear alerts:', error);
+            alert('Failed to clear alerts. Please try again.');
+            button.textContent = 'Clear Alerts';
+            button.disabled = false;
         }
     }
 }
