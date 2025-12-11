@@ -52,7 +52,6 @@ class Decision:
 
     # Model metadata
     model_type: str = "unknown"
-    model_version: str = "1.0"
 
     def __post_init__(self):
         # Convert string enums to Enum objects if passed as strings

@@ -98,8 +98,7 @@ class ThresholdModel(BaseDecisionModel):
                 confidence=0.95,
                 primary_metric="none",
                 metrics=self._extract_metrics(reading),
-                model_type=self.model_type,
-                model_version=self.version
+                model_type=self.model_type
             )
 
         # Return the highest priority decision
@@ -209,8 +208,7 @@ class ThresholdModel(BaseDecisionModel):
             threshold_crossed=base_decision["threshold"],
             context=context,
             metrics=self._extract_metrics(reading),
-            model_type=self.model_type,
-            model_version=self.version
+            model_type=self.model_type
         )
 
     def _analyze_charging(self, reading: dict[str, Any]) -> Optional[Decision]:
@@ -285,8 +283,7 @@ class ThresholdModel(BaseDecisionModel):
             threshold_crossed=base_decision["threshold"],
             context=context,
             metrics=self._extract_metrics(reading),
-            model_type=self.model_type,
-            model_version=self.version
+            model_type=self.model_type
         )
 
     def _extract_metrics(self, reading: dict[str, Any]) -> dict[str, Optional[float]]:
