@@ -14,12 +14,12 @@ except ImportError:
     from data_api import DataAPI
 
 try:
-    from ..models import ThresholdDecisionModel
+    from ..models import ThresholdModel
 except ImportError:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from models import ThresholdDecisionModel
+    from models import ThresholdModel
 
 
 app = Flask(__name__)
@@ -28,7 +28,7 @@ CORS(app)
 DB_URL = os.getenv("DATABASE_URL", "postgresql://group1:meshtastic4@localhost:5432/sensor_db")
 api = DataAPI(DB_URL)
 
-decision_model = ThresholdDecisionModel()
+decision_model = ThresholdModel()
 
 # Path to local decision storage file
 DECISIONS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'decisions.json')
