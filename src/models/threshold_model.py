@@ -78,43 +78,47 @@ class ThresholdModel(BaseDecisionModel):
         """
         decisions = []
 
-        # Always generate a watering decision (based on soil_moisture)
-        watering_decision = self._analyze_watering(reading)
-        if watering_decision:
-            decisions.append(watering_decision)
-        else:
-            # No watering issues - add normal watering status
-            decisions.append(Decision(
-                node_id=reading.get("node_id", "unknown"),
-                timestamp=reading.get("timestamp", ""),
-                decision_text="Soil moisture levels normal",
-                action=ActionType.NONE,
-                severity=Severity.NORMAL,
-                confidence=0.95,
-                primary_metric="soil_moisture",
-                primary_value=reading.get("soil_moisture"),
-                metrics=self._extract_metrics(reading),
-                model_type=self.model_type
-            ))
+        # Generate watering decision if we have soil_moisture data
+        soil_moisture = reading.get("soil_moisture")
+        if soil_moisture is not None:
+            watering_decision = self._analyze_watering(reading)
+            if watering_decision:
+                decisions.append(watering_decision)
+            else:
+                # No watering issues - add normal watering status
+                decisions.append(Decision(
+                    node_id=reading.get("node_id", "unknown"),
+                    timestamp=reading.get("timestamp", ""),
+                    decision_text="Soil moisture levels normal",
+                    action=ActionType.NONE,
+                    severity=Severity.NORMAL,
+                    confidence=0.95,
+                    primary_metric="soil_moisture",
+                    primary_value=soil_moisture,
+                    metrics=self._extract_metrics(reading),
+                    model_type=self.model_type
+                ))
 
-        # Always generate a charging decision (based on voltage)
-        charging_decision = self._analyze_charging(reading)
-        if charging_decision:
-            decisions.append(charging_decision)
-        else:
-            # No charging issues - add normal voltage status
-            decisions.append(Decision(
-                node_id=reading.get("node_id", "unknown"),
-                timestamp=reading.get("timestamp", ""),
-                decision_text="Battery voltage normal",
-                action=ActionType.NONE,
-                severity=Severity.NORMAL,
-                confidence=0.95,
-                primary_metric="voltage",
-                primary_value=reading.get("voltage"),
-                metrics=self._extract_metrics(reading),
-                model_type=self.model_type
-            ))
+        # Generate charging decision if we have voltage data
+        voltage = reading.get("voltage")
+        if voltage is not None:
+            charging_decision = self._analyze_charging(reading)
+            if charging_decision:
+                decisions.append(charging_decision)
+            else:
+                # No charging issues - add normal voltage status
+                decisions.append(Decision(
+                    node_id=reading.get("node_id", "unknown"),
+                    timestamp=reading.get("timestamp", ""),
+                    decision_text="Battery voltage normal",
+                    action=ActionType.NONE,
+                    severity=Severity.NORMAL,
+                    confidence=0.95,
+                    primary_metric="voltage",
+                    primary_value=voltage,
+                    metrics=self._extract_metrics(reading),
+                    model_type=self.model_type
+                ))
 
         return decisions
 
