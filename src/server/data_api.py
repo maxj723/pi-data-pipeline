@@ -4,6 +4,11 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+import sys
+
+# Add parent directory to path to import utils
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.node_config import get_all_nodes
 
 
 class DataAPI:
@@ -157,11 +162,16 @@ class DataAPI:
             return data
 
     def get_node_locations(self) -> list[dict[str, Any]]:
-        # TODO: Move this to a config file or database
-        nodes = [
-            {"node_id": "!512397a3", "lat": 41.698806, "lon": -86.236083, "name": "Dev Node"}
-        ]
+        """
+        Get node locations from config file and enrich with latest stats.
 
+        Returns:
+            List of node dictionaries with location and sensor statistics.
+        """
+        # Load nodes from config file
+        nodes = get_all_nodes()
+
+        # Enrich with latest sensor statistics
         stats = self.get_node_stats()
         node_data_map = {stat["node_id"]: stat for stat in stats}
 
