@@ -1,0 +1,24 @@
+{
+  "api": {
+    "provider": "openweathermap",
+    "base_url": "https://api.openweathermap.org/data/2.5",
+    "api_key": "YOUR_OPENWEATHERMAP_API_KEY_HERE",
+    "timeout_seconds": 10
+  },
+  "forecast": {
+    "hours_ahead": 24,
+    "precipitation_threshold_mm": 1.0,
+    "precipitation_types": ["Rain", "Drizzle", "Snow"]
+  },
+  "cache": {
+    "enabled": true,
+    "duration_minutes": 30,
+    "max_entries": 100
+  },
+  "decision_rules": {
+    "skip_watering_if_rain_expected": true,
+    "skip_watering_if_snow_expected": true,
+    "confidence_reduction_light_rain": 0.3,
+    "confidence_reduction_heavy_rain": 0.7
+  }
+}

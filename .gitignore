@@ -1,3 +1,6 @@
 .DS_Store
 __pycache__
 *.backup
+
+# Config files with sensitive API keys
+config/weather_config.json
