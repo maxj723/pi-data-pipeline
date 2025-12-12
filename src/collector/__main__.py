@@ -42,13 +42,14 @@ def main():
                     # Save sensor data to database
                     storage.save(telemetry_packet)
 
-                    # Generate decision from the telemetry data
+                    # Generate decisions from the telemetry data (returns list)
                     reading_dict = telemetry_packet.to_dict()
-                    decision = decision_model.analyze(reading_dict)
+                    decisions = decision_model.analyze(reading_dict)
 
-                    # Save ALL decisions to local storage (maintains one per node)
-                    decision_dict = decision.to_dict()
-                    decision_storage.save_decision(decision_dict)
+                    # Save ALL decisions to local storage (one per node+metric)
+                    for decision in decisions:
+                        decision_dict = decision.to_dict()
+                        decision_storage.save_decision(decision_dict)
 
                 else:
                     time.sleep(0.1)

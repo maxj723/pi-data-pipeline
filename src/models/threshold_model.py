@@ -63,47 +63,60 @@ class ThresholdModel(BaseDecisionModel):
             }
         }
 
-    def analyze(self, reading: dict[str, Any]) -> Decision:
+    def analyze(self, reading: dict[str, Any]) -> list[Decision]:
         """
-        Analyze a single sensor reading and produce a decision.
+        Analyze a single sensor reading and produce decisions.
 
-        Prioritizes actionable decisions (watering, charging) and uses
-        environmental sensors to adjust urgency and confidence.
+        Returns decisions for each monitored metric (watering and charging).
+        This allows multiple decisions per node to be displayed.
 
         Args:
             reading: Dictionary containing sensor data.
 
         Returns:
-            Decision object with standardized output.
+            List of Decision objects (one per primary_metric).
         """
-        # Check for actionable issues (watering and charging)
-        watering_decision = self._analyze_watering(reading)
-        charging_decision = self._analyze_charging(reading)
-
-        # Prioritize decisions by severity
         decisions = []
+
+        # Always generate a watering decision (based on soil_moisture)
+        watering_decision = self._analyze_watering(reading)
         if watering_decision:
             decisions.append(watering_decision)
-        if charging_decision:
-            decisions.append(charging_decision)
-
-        if not decisions:
-            # No actionable issues - normal operation
-            return Decision(
+        else:
+            # No watering issues - add normal watering status
+            decisions.append(Decision(
                 node_id=reading.get("node_id", "unknown"),
                 timestamp=reading.get("timestamp", ""),
-                decision_text="Normal operation - all systems optimal",
+                decision_text="Soil moisture levels normal",
                 action=ActionType.NONE,
                 severity=Severity.NORMAL,
                 confidence=0.95,
-                primary_metric="none",
+                primary_metric="soil_moisture",
+                primary_value=reading.get("soil_moisture"),
                 metrics=self._extract_metrics(reading),
                 model_type=self.model_type
-            )
+            ))
 
-        # Return the highest priority decision
-        decisions.sort(key=lambda d: d.get_priority(), reverse=True)
-        return decisions[0]
+        # Always generate a charging decision (based on voltage)
+        charging_decision = self._analyze_charging(reading)
+        if charging_decision:
+            decisions.append(charging_decision)
+        else:
+            # No charging issues - add normal voltage status
+            decisions.append(Decision(
+                node_id=reading.get("node_id", "unknown"),
+                timestamp=reading.get("timestamp", ""),
+                decision_text="Battery voltage normal",
+                action=ActionType.NONE,
+                severity=Severity.NORMAL,
+                confidence=0.95,
+                primary_metric="voltage",
+                primary_value=reading.get("voltage"),
+                metrics=self._extract_metrics(reading),
+                model_type=self.model_type
+            ))
+
+        return decisions
 
     def _analyze_watering(self, reading: dict[str, Any]) -> Optional[Decision]:
         """

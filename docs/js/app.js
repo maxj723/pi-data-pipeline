@@ -310,7 +310,7 @@ class DashboardApp {
                     <span class="decision-node">${decision.node_id}</span>
                     <span class="decision-confidence">${(decision.confidence * 100).toFixed(0)}% confident</span>
                 </div>
-                <div class="decision-text">${decision.decision}</div>
+                <div class="decision-text">${decision.decision_text}</div>
                 ${decision.action !== 'none' ? `<div class="decision-action">Action: ${decision.action.replace(/_/g, ' ')}</div>` : ''}
                 <div class="decision-timestamp">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

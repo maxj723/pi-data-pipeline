@@ -46,8 +46,9 @@ class DecisionStorage:
         """
         Save a decision to the storage file.
 
-        Maintains one decision per node_id. If the decision is the same as the
-        existing one (excluding timestamp), only the timestamp is updated.
+        Maintains one decision per (node_id, primary_metric) pair. This allows
+        multiple decisions per node (e.g., one for voltage, one for soil_moisture).
+        If the decision is the same as existing (excluding timestamp), only timestamp is updated.
 
         Args:
             decision_dict: Decision dictionary to save.
@@ -58,23 +59,32 @@ class DecisionStorage:
         try:
             with self._lock:
                 node_id = decision_dict.get('node_id')
+                primary_metric = decision_dict.get('primary_metric', 'unknown')
+
                 if not node_id:
                     print("Error: Decision missing node_id")
                     return False
 
-                # Read existing decisions (stored as dict with node_id as key)
+                # Create composite key: node_id + primary_metric
+                decision_key = f"{node_id}_{primary_metric}"
+
+                # Read existing decisions (stored as dict with composite key)
                 with open(self.file_path, 'r') as f:
                     try:
                         decisions_dict = json.load(f)
                         # Handle legacy format (list) - convert to dict
                         if isinstance(decisions_dict, list):
-                            decisions_dict = {d['node_id']: d for d in decisions_dict if 'node_id' in d}
+                            decisions_dict = {}
+                            for d in decisions_dict:
+                                if 'node_id' in d:
+                                    key = f"{d['node_id']}_{d.get('primary_metric', 'unknown')}"
+                                    decisions_dict[key] = d
                     except json.JSONDecodeError:
                         decisions_dict = {}
 
-                # Check if we already have a decision for this node
-                if node_id in decisions_dict:
-                    existing = decisions_dict[node_id]
+                # Check if we already have a decision for this node+metric
+                if decision_key in decisions_dict:
+                    existing = decisions_dict[decision_key]
 
                     # Compare decisions (excluding timestamp)
                     new_without_timestamp = {k: v for k, v in decision_dict.items() if k != 'timestamp'}
@@ -83,15 +93,15 @@ class DecisionStorage:
                     if new_without_timestamp == existing_without_timestamp:
                         # Same decision - just update timestamp
                         existing['timestamp'] = decision_dict['timestamp']
-                        print(f"  → Updated timestamp for {node_id}: {existing['decision_text']}")
+                        print(f"  → Updated timestamp for {node_id}/{primary_metric}: {existing['decision_text']}")
                     else:
                         # Different decision - replace it
-                        decisions_dict[node_id] = decision_dict
-                        print(f"  → Updated decision for {node_id}: {decision_dict['decision_text']}")
+                        decisions_dict[decision_key] = decision_dict
+                        print(f"  → Updated decision for {node_id}/{primary_metric}: {decision_dict['decision_text']}")
                 else:
-                    # New node - add it
-                    decisions_dict[node_id] = decision_dict
-                    print(f"  → New decision for {node_id}: {decision_dict['decision_text']}")
+                    # New node+metric - add it
+                    decisions_dict[decision_key] = decision_dict
+                    print(f"  → New decision for {node_id}/{primary_metric}: {decision_dict['decision_text']}")
 
                 # Write back to file
                 with open(self.file_path, 'w') as f:
