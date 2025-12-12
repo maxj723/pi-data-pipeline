@@ -4,3 +4,4 @@ sqlalchemy
 pandas
 flask
 flask-cors
+requests
